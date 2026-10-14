@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cartes d'interview</title>
+<!-- Les blocs entre marqueurs sont remplacés par outils/build.mjs pour la version iPad (site/) -->
+<link rel="stylesheet" href="polices/polices.css">
+<script src="jszip.min.js"></script>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
+<link rel="icon" href="icones/icone-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cartes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2340D9">
+<script>window.PWA={v:"v1",d:"2026-10-14"}</script>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F3F5FA; --surface:#FFFFFF; --ink:#15171C; --muted:#5D6375; --line:#DCE0EA;
+  --cobalt:#2340D9; --sun:#FFC93C; --jade:#11806A; --plum:#6B2A8C; --red:#C8323C;
+  --sel:#E6EAFF;
+  --latin:"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --han:"Noto Sans SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#10131C; --surface:#1A1E2A; --ink:#F1F3F8; --muted:#A3A9BA; --line:#2C3242; --sel:#26306B;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#10131C; --surface:#1A1E2A; --ink:#F1F3F8; --muted:#A3A9BA; --line:#2C3242; --sel:#26306B;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--latin);-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--cobalt);outline-offset:2px}
+[hidden]{display:none!important}
+
+.view{max-width:1200px;margin:0 auto;padding:20px 20px 120px}
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:20px}
+h1{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;letter-spacing:-.02em;margin:0;line-height:1}
+h1 span{display:block;font-family:var(--han);font-size:.5em;font-weight:500;color:var(--muted);margin-top:6px;letter-spacing:0}
+.opts{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.seg{display:inline-flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;padding:8px 14px;border-radius:999px;font-weight:600}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.tog{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-weight:600}
+.tog i{width:34px;height:20px;border-radius:99px;background:var(--line);position:relative;transition:background .15s}
+.tog i::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.tog[aria-pressed="true"] i{background:var(--jade)}
+.tog[aria-pressed="true"] i::after{transform:translateX(14px)}
+.pill{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:9px 16px;font-weight:700}
+.pill.dark{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.grid{display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.lib{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:6px 0}
+.cat{padding:14px 18px 4px;font-weight:800;font-size:1.05rem;display:flex;align-items:center;gap:10px}
+.cat::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--c)}
+.q{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 6px}
+.q .main{flex:1;display:flex;align-items:center;gap:12px;text-align:left;border:0;background:none;padding:10px;border-radius:12px;min-height:56px}
+.q .main:hover{background:var(--bg)}
+.q.on .main{background:var(--sel)}
+.q .n{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.85rem}
+.q.on .n{background:var(--cobalt);border-color:var(--cobalt);color:#fff}
+.q .t{display:flex;flex-direction:column;gap:2px}
+.q .t b{font-weight:600;font-size:1rem;line-height:1.3}
+.q .t small{font-family:var(--han);color:var(--muted);font-size:.9rem}
+.star{border:0;background:none;width:44px;height:44px;border-radius:50%;font-size:1.3rem;color:var(--line)}
+.star[aria-pressed="true"]{color:#F2A900}
+.side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px}
+.panel h2{margin:0 0 10px;font-size:1.1rem;font-weight:800;display:flex;justify-content:space-between;align-items:baseline}
+.panel h2 button{border:0;background:none;color:var(--muted);font-size:.9rem;font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px}
+.step button{border:0;background:none;width:40px;height:40px;font-size:1.2rem;font-weight:800}
+.step output{min-width:28px;text-align:center;font-weight:800}
+.dice{flex:1;border:0;background:var(--sun);color:#15171C;border-radius:14px;padding:12px 14px;font-weight:800;font-size:1rem}
+.hint{color:var(--muted);font-size:.85rem;margin:8px 0 0;line-height:1.4}
+.chosen{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:40vh;overflow:auto}
+.chosen li{display:flex;align-items:center;gap:8px;padding:8px 6px 8px 12px;background:var(--bg);border-radius:12px;font-size:.95rem;line-height:1.3}
+.chosen li span{flex:1}
+.chosen li button{border:0;background:none;width:34px;height:34px;border-radius:50%;color:var(--muted);font-size:1rem}
+.empty{color:var(--muted);font-size:.95rem;margin:0}
+.go{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 18px);border:0;background:var(--cobalt);color:#fff;font-weight:800;font-size:1.15rem;padding:18px 34px;border-radius:999px;box-shadow:0 10px 30px rgba(35,64,217,.35);z-index:5;white-space:nowrap}
+
+/* forms */
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-weight:700;font-size:.95rem}
+.field input{font:inherit;font-size:1.1rem;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.field small{color:var(--muted)}
+
+/* history */
+.sess{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.sess button{width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:16px;padding:16px 18px;display:flex;justify-content:space-between;gap:14px;align-items:center}
+.sess b{font-size:1.15rem;display:block}
+.sess small{color:var(--muted);display:block;margin-top:3px}
+.sess .num{font-weight:800;background:var(--bg);border-radius:999px;padding:6px 12px;white-space:nowrap}
+
+/* detail */
+.dhead{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:700px){.dhead{grid-template-columns:1fr}}
+.exp{display:flex;flex-direction:column;gap:12px;margin:16px 0 20px}
+.exp .lab{font-weight:700;font-size:.9rem;color:var(--muted);margin-right:4px}
+.qs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.qs li{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;grid-template-columns:auto 1fr;gap:12px 14px;align-items:center}
+.qs .no{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:var(--c);color:var(--cf)}
+.qs .txt b{display:block;font-weight:600;line-height:1.3}
+.qs .txt small{font-family:var(--han);color:var(--muted)}
+.qs .prev{grid-column:1/-1;background:repeating-conic-gradient(var(--line) 0 25%,transparent 0 50%) 0 0/18px 18px;border-radius:12px;padding:14px;display:flex;justify-content:center;overflow:hidden}
+.qs .prev img{max-width:100%;height:auto;max-height:90px}
+.qs .acts{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.danger{color:var(--red)!important}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 24px);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:999px;font-weight:700;z-index:60;max-width:90vw;text-align:center}
+.imgover{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:70;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:calc(env(safe-area-inset-top,0px) + 20px) 20px calc(env(safe-area-inset-bottom,0px) + 20px);color:#fff;text-align:center}
+.imgover img{max-width:100%;max-height:70vh;background:repeating-conic-gradient(#444 0 25%,#333 0 50%) 0 0/18px 18px}
+.imgover .row{justify-content:center}
+.imgover .pill{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.35)}
+.imgover .pill.dark{background:#fff;color:#15171C;border-color:#fff}
+.maj{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 12px);border:0;background:var(--jade);color:#fff;font-weight:800;padding:12px 22px;border-radius:999px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.25);max-width:92vw}
+.ver{color:var(--muted);font-size:.8rem;margin:18px 0 0;text-align:center}
+.backup{margin-bottom:16px}
+.backup .row{margin-top:10px}
+
+/* ---------- Stage ---------- */
+.stage{position:fixed;inset:0;display:none;z-index:20;background:var(--card);color:var(--cardink);transition:background .25s}
+.stage.open{display:block}
+.stage .wrap{position:absolute;inset:0;padding:calc(env(safe-area-inset-top,0px) + 70px) 6vw calc(env(safe-area-inset-bottom,0px) + 90px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;user-select:none;-webkit-user-select:none}
+.big{font-weight:900;line-height:1.25;max-width:22ch;margin:0;letter-spacing:.01em}
+.big.han{font-family:var(--han);font-size:clamp(2.4rem,7vw,6.2rem)}
+.big.lat{font-family:var(--latin);font-weight:800;font-size:clamp(2rem,5.2vw,4.6rem);letter-spacing:-.02em;max-width:24ch}
+.sub{margin-top:28px;font-size:clamp(1rem,1.8vw,1.35rem);opacity:.72;max-width:50ch;font-weight:600}
+.note{margin:22px 0 0;font-size:clamp(1.1rem,2.3vw,1.7rem);font-weight:600;opacity:.85;line-height:1.4;max-width:40ch}
+.note.han{font-family:var(--han);font-weight:500}
+.stage.th .wrap{justify-content:center}
+.kicker{font-family:var(--han);font-weight:900;font-size:clamp(1.3rem,2.8vw,2.2rem);line-height:1.35;margin:0;opacity:.9}
+.kicker.lat{font-family:var(--latin);font-weight:800}
+.tname{font-size:clamp(2.6rem,6vw,5rem);font-weight:900;margin:14px 0 0;line-height:1.1}
+.tname.han{font-family:var(--han)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:min(860px,100%);margin-top:30px}
+.tiles .tile:last-child:nth-child(odd){grid-column:1/-1}
+.tile{border:0;border-radius:26px;padding:20px 16px;min-height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--tb);color:var(--tf);animation:pop .45s cubic-bezier(.2,1.4,.4,1) both}
+.tile:nth-child(2){animation-delay:.07s}.tile:nth-child(3){animation-delay:.14s}.tile:nth-child(4){animation-delay:.21s}
+.tile .em{font-size:clamp(2rem,4vw,3rem);line-height:1}
+.tile b{font-size:clamp(1.4rem,3vw,2.3rem);font-weight:900;line-height:1.15}
+.tile b.han{font-family:var(--han)}
+.tile small{font-size:clamp(.85rem,1.4vw,1.05rem);opacity:.8;font-weight:600}
+.tile.picked{outline:6px solid #fff;outline-offset:3px}
+@keyframes pop{from{transform:scale(.85);opacity:0}to{transform:none;opacity:1}}
+.reroll{margin-top:22px;border:0;background:rgba(255,255,255,.14);color:#fff;font-weight:700;padding:10px 18px;border-radius:999px}
+.ttag{display:inline-flex;gap:8px;align-items:center;border:3px solid currentColor;border-radius:999px;padding:6px 18px;font-weight:900;font-size:clamp(1.1rem,2.2vw,1.6rem);margin:0 0 26px}
+.ttag.han{font-family:var(--han)}
+.yesno{display:flex;gap:24px;margin-top:40px;flex-wrap:wrap;justify-content:center}
+.yesno div{font-family:var(--han);font-weight:900;font-size:clamp(1.6rem,4vw,3rem);padding:16px 34px;border-radius:24px;border:4px solid currentColor}
+.branch{display:flex;gap:16px;margin-top:40px;flex-wrap:wrap;justify-content:center}
+.branch button,.finbtn{border:0;background:rgba(255,255,255,.92);color:#15171C;font-weight:800;font-size:1.1rem;padding:16px 26px;border-radius:16px}
+.namebox{margin-top:36px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:min(720px,100%)}
+.namebox input{flex:1;min-width:240px;font-family:var(--han);font-weight:500;font-size:clamp(1.6rem,3.6vw,2.6rem);padding:16px 22px;border-radius:20px;border:0;background:#fff;color:#15171C;text-align:center;user-select:text;-webkit-user-select:text}
+.namebox button{border:0;background:#15171C;color:#fff;font-weight:900;font-size:1.6rem;padding:0 30px;border-radius:20px;min-height:64px}
+.bar{position:absolute;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:0 18px;z-index:2}
+.bar.t{top:calc(env(safe-area-inset-top,0px) + 14px)}
+.bar.b{bottom:calc(env(safe-area-inset-bottom,0px) + 16px)}
+.ic{border:0;background:rgba(0,0,0,.18);color:inherit;height:52px;min-width:52px;padding:0 16px;border-radius:999px;font-size:1.2rem;font-weight:800}
+.count{font-weight:800;opacity:.75;font-size:1rem}
+.prog{position:absolute;left:0;top:0;height:5px;background:currentColor;opacity:.5;transition:width .25s}
+.drawer{position:absolute;inset:0;background:var(--bg);color:var(--ink);z-index:5;display:none;flex-direction:column}
+.drawer.open{display:flex}
+.drawer header{display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 14px) 18px 12px;border-bottom:1px solid var(--line)}
+.drawer header b{font-size:1.2rem;font-weight:800}
+.drawer .list{overflow:auto;flex:1;padding:6px 8px calc(env(safe-area-inset-bottom,0px) + 20px)}
+.drawer .list button{display:flex;width:100%;text-align:left;border:0;background:none;padding:14px 12px;border-radius:12px;gap:12px;align-items:center;font-size:1.02rem}
+.drawer .list button:hover{background:var(--surface)}
+.drawer .list button.done{opacity:.4}
+.drawer .list button small{font-family:var(--han);color:var(--muted)}
+.savev{position:fixed;inset:0;z-index:40;background:var(--bg);overflow:auto}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="view" id="setup">
+  <div class="top">
+    <h1>Cartes d'interview<span>街头采访卡片</span></h1>
+    <div class="opts">
+      <button class="pill dark" id="histBtn">Mes interviews</button>
+      <div class="seg" role="group" aria-label="Langue des cartes" id="langSeg">
+        <button data-l="zh">中文</button><button data-l="en">English</button><button data-l="fr">Français</button>
+      </div>
+      <button class="tog" id="helpTog"><i></i>Traduction FR sous la carte</button>
+      <button class="tog" id="introTog"><i></i>Ouverture + présentation</button>
+    </div>
+  </div>
+  <div class="grid">
+    <section class="lib" id="lib" aria-label="Banque de questions"></section>
+    <aside class="side">
+      <div class="panel">
+        <h2>Au hasard</h2>
+        <div class="row">
+          <div class="step"><button id="minus" aria-label="Moins">−</button><output id="cnt">5</output><button id="plus" aria-label="Plus">+</button></div>
+          <div class="seg" role="group" aria-label="Source" id="srcSeg">
+            <button data-s="all">Toutes</button><button data-s="fav">★ Favorites</button>
+          </div>
+        </div>
+        <div class="row" style="margin-top:10px"><button class="dice" id="dice">🎲 Tirer les questions</button></div>
+        <p class="hint">Remplace ta sélection actuelle. Pendant l'interview, le bouton 🎲 ajoute une question surprise.</p>
+      </div>
+      <div class="panel">
+        <h2>Questions à thème</h2>
+        <div class="row">
+          <button class="tog" id="themeTog"><i></i>Activées</button>
+          <span>toutes les</span>
+          <div class="step"><button id="eMinus" aria-label="Moins">−</button><output id="every">3</output><button id="ePlus" aria-label="Plus">+</button></div>
+          <span>questions</span>
+        </div>
+        <p class="hint">Une carte surprise apparaît : la personne choisit un sous-thème (ex : Films, Séries, Animés, Jeux vidéo) et reçoit une question dessus. Pendant l'interview, 🎭 en lance une quand tu veux.</p>
+      </div>
+      <div class="panel">
+        <h2>Ton interview <button id="clear">Vider</button></h2>
+        <ol class="chosen" id="chosen"></ol>
+      </div>
+    </aside>
+  </div>
+  <p class="ver" id="ver"></p>
+  <button class="go" id="go">Lancer l'interview</button>
+</main>
+
+<main class="view" id="history" hidden>
+  <div class="top">
+    <h1>Mes interviews</h1>
+    <button class="pill" id="histBack">← Retour aux questions</button>
+  </div>
+  <div class="panel backup">
+    <h2>Sauvegarde</h2>
+    <p class="hint" id="bkInfo" style="margin:0"></p>
+    <div class="row">
+      <button class="pill dark" id="bkSend">Envoyer une sauvegarde</button>
+      <button class="pill" id="bkLoad">Importer une sauvegarde</button>
+      <input type="file" id="bkFile" accept=".json,application/json" hidden>
+    </div>
+  </div>
+  <ul class="sess" id="sessList"></ul>
+</main>
+
+<main class="view" id="detail" hidden>
+  <div class="top">
+    <h1 id="dTitle"></h1>
+    <button class="pill" id="detBack">← Mes interviews</button>
+  </div>
+  <div class="panel">
+    <div class="dhead">
+      <div class="field"><label for="dName">Prénom et nom</label><input id="dName" autocomplete="off"></div>
+      <div class="field"><label for="dNote">Repère pour t'en souvenir</label><input id="dNote" placeholder="ex : veste rouge, devant le métro" autocomplete="off"></div>
+    </div>
+    <p class="hint" id="dMeta" style="margin:0"></p>
+  </div>
+  <div class="exp">
+    <div class="row"><span class="lab">Langue des PNG</span>
+      <div class="seg" id="xLang"><button data-x="orig+fr">Original + FR</button><button data-x="fr">FR</button><button data-x="en">EN</button><button data-x="orig">Original</button></div>
+    </div>
+    <div class="row"><span class="lab">Plein écran</span>
+      <div class="seg" id="xFmt"><button data-f="h">16:9 paysage</button><button data-f="v">9:16 vertical</button></div>
+    </div>
+    <div class="row">
+      <button class="pill dark" id="zipAll">Tout télécharger (.zip)</button>
+      <button class="pill" id="copyList">Copier la liste des questions</button>
+      <button class="pill danger" id="delSess">Supprimer</button>
+    </div>
+  </div>
+  <ol class="qs" id="qsList"></ol>
+</main>
+
+<div class="stage" id="stage">
+  <div class="prog" id="prog"></div>
+  <div class="bar t">
+    <button class="ic" id="close" aria-label="Quitter">✕</button>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="wrap" id="wrap"></div>
+  <div class="bar b">
+    <button class="ic" id="back" aria-label="Carte précédente">←</button>
+    <div style="display:flex;gap:10px">
+      <button class="ic" id="pick">☰ Choisir</button>
+      <button class="ic" id="themeBtn" aria-label="Carte thème">🎭</button>
+      <button class="ic" id="rand" aria-label="Question au hasard">🎲</button>
+    </div>
+  </div>
+  <div class="drawer" id="drawer">
+    <header><b>Prochaine question</b><button class="ic" id="dclose" style="background:var(--surface)">✕</button></header>
+    <div class="list" id="dlist"></div>
+  </div>
+</div>
+
+<section class="savev" id="saveV" hidden>
+  <div class="view" style="max-width:760px">
+    <div class="top"><h1>Enregistrer l'interview</h1></div>
+    <div class="panel">
+      <div class="field"><label for="sName">Prénom et nom</label><input id="sName" autocomplete="off"><small>Écrit par la personne. Tu peux le corriger.</small></div>
+      <div class="field"><label for="sNote">Repère pour t'en souvenir</label><input id="sNote" placeholder="ex : veste rouge, devant le métro" autocomplete="off"></div>
+      <h2 style="margin-top:6px">Questions posées</h2>
+      <ol class="chosen" id="sList" style="max-height:none"></ol>
+    </div>
+    <div class="row" style="margin-top:18px">
+      <button class="pill dark" id="sSave" style="padding:16px 26px;font-size:1.1rem">Enregistrer</button>
+      <button class="pill" id="sResume">Reprendre l'interview</button>
+      <button class="pill danger" id="sDiscard">Ne pas enregistrer</button>
+    </div>
+  </div>
+</section>
+
+<script>
+const CATS = {
+  kid:  {fr:"Enfance et souvenirs", c:"#FF8FA3"},
+  joy:  {fr:"Bonheur et sourire", c:"#FFC93C"},
+  love: {fr:"Amour et relations", c:"#E2445C"},
+  work: {fr:"Travail et ambition", c:"#3B82F6"},
+  wise: {fr:"Sagesse et leçons de vie", c:"#11806A"},
+  you:  {fr:"Ta vie et toi", c:"#2340D9"},
+  dream:{fr:"Rêves et imagination", c:"#9B5DE5"},
+  meaning:{fr:"Sens de la vie", c:"#0F4C5C"},
+  fun:  {fr:"Léger et fun", c:"#F97316"},
+  world:{fr:"Le monde et les cultures", c:"#6B2A8C"},
+  time: {fr:"Le temps et l'avenir", c:"#64748B"}
+};
+const Q = [
+ ["passion","joy","你对什么充满热情？","What are you passionate about?","Qu'est-ce qui te passionne ?"],
+ ["smile","joy","是什么让你一直保持微笑？","What keeps you smiling?","Qu'est-ce qui te fait garder le sourire ?"],
+ ["happy","joy","什么让你真正快乐？","What truly makes you happy?","Qu'est-ce qui te rend vraiment heureux ?"],
+ ["laugh","joy","你上一次开怀大笑是因为什么？","What made you laugh really hard last time?","La dernière fois que tu as vraiment ri, c'était pour quoi ?"],
+ ["moment","joy","一天中你最喜欢哪个时刻？","What's your favorite moment of the day?","Ton moment préféré de la journée ?"],
+ ["advice","wise","你听过最好的人生建议是什么？","What's the best life advice you've ever received?","Le meilleur conseil de vie que tu as reçu ?"],
+ ["past","wise","如果能对十年前的自己说一句话，你会说什么？","One sentence to yourself 10 years ago?","Une phrase à ton toi d'il y a 10 ans ?"],
+ ["future","wise","如果能对十年后的自己说一句话，你会说什么？","One sentence to yourself 10 years from now?","Une phrase à ton toi dans 10 ans ?"],
+ ["earlier","wise","有什么事你希望自己早点知道？","What do you wish you had known earlier?","Qu'est-ce que tu aurais aimé savoir plus tôt ?"],
+ ["young","wise","你会给年轻人什么建议？","What advice would you give young people?","Quel conseil donnerais-tu aux jeunes ?"],
+ ["secret","wise","你觉得幸福的秘诀是什么？","What's the secret to happiness?","C'est quoi le secret du bonheur, selon toi ?"],
+ ["word","you","用一个词形容你的生活。","Describe your life in one word.","Ta vie en un mot."],
+ ["proud","you","你最骄傲的一件事是什么？","What are you most proud of?","De quoi es-tu le plus fier ?"],
+ ["kid","you","你小时候想成为什么？","What did you want to be as a kid?","Petit, tu voulais devenir quoi ?"],
+ ["dream","you","你最大的梦想是什么？","What's your biggest dream?","Ton plus grand rêve ?"],
+ ["money","you","如果钱不是问题，你会做什么？","If money didn't matter, what would you do?","Si l'argent n'était pas un problème, tu ferais quoi ?"],
+ ["influence","you","谁对你的人生影响最大？","Who has influenced your life the most?","Qui a le plus influencé ta vie ?"],
+ ["grateful","you","你最感恩的是什么？","What are you most grateful for?","Pour quoi es-tu le plus reconnaissant ?"],
+ ["day","you","你人生中最难忘的一天是哪一天？","What was the most unforgettable day of your life?","Le jour le plus inoubliable de ta vie ?"],
+ ["success","you","对你来说，成功是什么？","What does success mean to you?","C'est quoi réussir, pour toi ?"],
+ ["otherside","world","你对世界另一边的人有什么印象？","What do you think of people on the other side of the world?","Quelle image as-tu des gens de l'autre côté du monde ?"],
+ ["city","world","外国人来你的城市，一定要做什么？","What must a foreigner absolutely do in your city?","Un étranger dans ta ville doit absolument faire quoi ?"],
+ ["travel","world","你最想去哪个国家？为什么？","Which country do you dream of visiting, and why?","Le pays où tu rêves d'aller, et pourquoi ?"],
+ ["country","world","你的国家有什么是全世界应该知道的？","What should the whole world know about your country?","Qu'est-ce que le monde entier devrait savoir sur ton pays ?"],
+ ["n01","kid","你最美好的童年回忆是什么？","What's your best childhood memory?","Quel est ton plus beau souvenir d'enfance ?"],
+ ["n02","kid","小时候哪个玩具或游戏让你印象最深？","Which toy or game marked you most as a kid?","Quel jouet ou quel jeu t'a le plus marqué petit ?"],
+ ["n03","kid","你父母教会你最重要的事是什么？","What's the most important thing your parents taught you?","Qu'est-ce que tes parents t'ont appris de plus important ?"],
+ ["n04","kid","哪道菜让你想起家？","Which dish reminds you of home?","Quel plat te rappelle ta maison ?"],
+ ["n05","kid","你最怀念童年的什么？","What do you miss most about your childhood?","Qu'est-ce qui te manque de ton enfance ?"],
+ ["n06","kid","小时候做过什么傻事，现在想起来还会笑？","What silly thing did you do as a kid that still makes you laugh?","Quelle bêtise as-tu faite petit qui te fait encore rire ?"],
+ ["n07","love","对你来说，爱是什么？","What is love, to you?","C'est quoi l'amour, pour toi ?"],
+ ["n08","love","你怎么知道一个人是真正的朋友？","How do you know someone is a true friend?","Comment sais-tu qu'une personne est un vrai ami ?"],
+ ["n09","love","别人给过你最好的赞美是什么？","What's the best compliment you've ever received?","Quel est le plus beau compliment qu'on t'ait fait ?"],
+ ["n10","love","什么让一个家庭幸福？","What makes a family happy?","Qu'est-ce qui rend une famille heureuse ?"],
+ ["n11","love","你最看重一个人的什么品质？","What quality do you look for in someone?","Quelle qualité cherches-tu chez quelqu'un ?"],
+ ["n12","love","有好消息的时候，你第一个会打给谁？","Who would you call first with good news?","Qui appellerais-tu en premier pour une bonne nouvelle ?"],
+ ["n13","love","有什么话你一直想对某人说，却从来不敢？","What have you always wanted to tell someone, but never dared?","Qu'est-ce que tu aimerais dire à quelqu'un, sans jamais avoir osé ?"],
+ ["n14","work","如果明天可以做任何工作，你会选什么？","If you could do any job tomorrow, what would it be?","Si tu pouvais faire n'importe quel métier demain, ce serait lequel ?"],
+ ["n15","work","你在工作或学校里得到过最好的建议是什么？","What's the best advice you got at work or at school?","Quel est le meilleur conseil que tu as reçu au travail ou à l'école ?"],
+ ["n16","work","是什么让你每天早上起床？","What gets you out of bed every morning?","Qu'est-ce qui te motive à te lever le matin ?"],
+ ["n17","work","哪一次失败最后反而帮助了你？","Which failure ended up helping you?","Quel échec t'a finalement aidé ?"],
+ ["n18","work","你更想赚很多钱，还是有很多自由时间？","Would you rather earn a lot of money or have a lot of free time?","Tu préfères gagner beaucoup d'argent ou avoir beaucoup de temps libre ?"],
+ ["n19","work","你觉得五年后的自己会在哪里？","Where do you see yourself in 5 years?","Où te vois-tu dans 5 ans ?"],
+ ["n20","joy","日常生活中，什么小事让你开心？","What little everyday thing makes you happy?","Quelle petite chose du quotidien te rend heureux ?"],
+ ["n21","joy","糟糕的一天之后，你怎么让自己开心起来？","How do you cheer yourself up after a bad day?","Comment tu te remontes le moral après une mauvaise journée ?"],
+ ["n22","joy","你现在最大的压力是什么？","What stresses you the most right now?","Qu'est-ce qui te stresse le plus en ce moment ?"],
+ ["n23","joy","你上一次感到真正自由是什么时候？","When did you last feel truly free?","Quand t'es-tu senti vraiment libre pour la dernière fois ?"],
+ ["n24","joy","需要一个人待着的时候，你会做什么？","What do you do when you need to be alone?","Qu'est-ce que tu fais quand tu as besoin d'être seul ?"],
+ ["n25","joy","你是乐观的人还是悲观的人？","Are you an optimist or a pessimist?","Tu es plutôt optimiste ou pessimiste ?"],
+ ["n26","joy","什么给你希望？","What gives you hope?","Qu'est-ce qui te donne de l'espoir ?"],
+ ["n27","wise","有什么错误你绝对不会再犯？","What mistake would you never make again?","Quelle erreur ne referais-tu jamais ?"],
+ ["n28","wise","今年生活教会了你什么？","What has life taught you this year?","Qu'est-ce que la vie t'a appris cette année ?"],
+ ["n29","wise","你做过最勇敢的事是什么？","What's the bravest thing you've ever done?","Quelle est la chose la plus courageuse que tu aies faite ?"],
+ ["n30","wise","如果重来一次，你会做什么不同的选择？","What would you have done differently?","Qu'est-ce que tu aurais fait autrement ?"],
+ ["n31","wise","有什么人生原则你一直坚持？","What life rule do you always follow?","Une règle de vie que tu suis toujours ?"],
+ ["n32","wise","别人对你最大的误解是什么？","What do people misunderstand about you?","Qu'est-ce que les gens comprennent mal chez toi ?"],
+ ["n33","wise","哪句话改变了你的人生？","Which sentence changed your life?","Quelle phrase t'a changé la vie ?"],
+ ["n34","wise","你从爷爷奶奶或外公外婆身上学到了什么？","What did you learn from your grandparents?","Qu'est-ce que tu as appris de tes grands-parents ?"],
+ ["n35","dream","如果你能有一种超能力，你想要什么？","If you had a superpower, what would it be?","Si tu avais un super-pouvoir, lequel ?"],
+ ["n36","dream","如果能和任何人吃一顿饭，在世的或已故的，你会选谁？","If you could have dinner with anyone, living or dead, who would it be?","Si tu pouvais dîner avec n'importe qui, vivant ou mort, ce serait qui ?"],
+ ["n37","dream","如果可以生活在另一个时代，你会选哪个？","If you could live in another era, which one?","Si tu pouvais vivre à une autre époque, laquelle ?"],
+ ["n38","dream","如果你什么都不怕，你会做什么？","What would you do if you weren't afraid of anything?","Qu'est-ce que tu ferais si tu n'avais peur de rien ?"],
+ ["n39","dream","这辈子你一定要做的事有哪些？","What's on your bucket list?","Qu'est-ce qui est sur ta liste de choses à faire avant de mourir ?"],
+ ["n40","dream","如果明天中了一百万，你第一件事会做什么？","If you won a million tomorrow, what would you do first?","Si tu gagnais un million demain, que ferais-tu en premier ?"],
+ ["n41","dream","如果能改变世界上的一件事，你会改变什么？","If you could change one thing in the world, what would it be?","Si tu pouvais changer une chose dans le monde, laquelle ?"],
+ ["n42","you","你最大的缺点是什么？","What's your biggest flaw?","Quel est ton plus grand défaut ?"],
+ ["n43","you","你最大的优点是什么？","What's your greatest quality?","Quelle est ta plus grande qualité ?"],
+ ["n44","you","你的朋友会用哪三个词形容你？","How would your friends describe you in three words?","Comment tes amis te décriraient-ils en trois mots ?"],
+ ["n45","you","你害怕什么？","What are you afraid of?","De quoi as-tu peur ?"],
+ ["n46","you","什么事会让你生气？","What makes you angry?","Qu'est-ce qui te met en colère ?"],
+ ["n47","you","什么会让你哭？","What makes you cry?","Qu'est-ce qui te fait pleurer ?"],
+ ["n48","you","你最为父母感到骄傲的是什么？","What are you proudest of about your parents?","De quoi es-tu le plus fier chez tes parents ?"],
+ ["n49","you","你有什么隐藏的才能？","What's your hidden talent?","Quel talent caché as-tu ?"],
+ ["n50","meaning","怎样的人生才算是成功的人生？","What is a successful life?","C'est quoi une vie réussie ?"],
+ ["n51","meaning","人生中真正重要的是什么？","What really matters in life?","Qu'est-ce qui compte vraiment dans la vie ?"],
+ ["n52","meaning","你希望别人记住你什么？","What do you want people to remember about you?","Qu'est-ce que tu veux qu'on retienne de toi ?"],
+ ["n53","meaning","钱能买到幸福吗？","Can money buy happiness?","L'argent fait-il le bonheur ?"],
+ ["n54","meaning","除了钱，什么让一个人富有？","Besides money, what makes someone rich?","Qu'est-ce qui rend quelqu'un riche, à part l'argent ?"],
+ ["n55","meaning","人生中哪个年龄最好？","What's the best age in life?","Quel âge est le meilleur de la vie ?"],
+ ["n56","meaning","是什么让你和别人不一样？","What makes you different from others?","Qu'est-ce qui te rend différent des autres ?"],
+ ["n57","fun","你最近最喜欢的歌是什么？","What's your favorite song right now?","Ta chanson préférée du moment ?"],
+ ["n58","fun","世界上最好吃的菜是什么？","What's the best dish in the world?","Le meilleur plat du monde ?"],
+ ["n59","fun","你是早起的人，还是夜猫子？","Are you a morning person or a night owl?","Tu es plutôt matin ou soir ?"],
+ ["n60","fun","有什么电影是每个人都应该看的？","Which movie should everyone watch?","Un film que tout le monde devrait voir ?"],
+ ["n61","fun","你用得最多的App是什么？","What's your most used app?","Ton application la plus utilisée ?"],
+ ["n62","fun","哪种动物最像你？","Which animal is most like you?","Quel animal te ressemble le plus ?"],
+ ["n63","fun","你做过最疯狂的事是什么？","What's the craziest thing you've ever done?","La chose la plus folle que tu aies faite ?"],
+ ["n64","fun","你最喜欢你城市的哪个地方？","What's your favorite place in your city?","Ton endroit préféré dans ta ville ?"],
+ ["n65","fun","你的语言里，你最喜欢哪个词？","What's your favorite word in your language?","Un mot de ta langue que tu adores ?"],
+ ["n66","fun","有什么东西你绝对不会吃？","What would you never eat?","Qu'est-ce que tu ne pourrais jamais manger ?"],
+ ["n67","fun","我说了我来自比利时……\n但你猜猜，我的家族原本来自哪里？","I told you I'm from Belgium…\nbut can you guess my origins?","Je t'ai dit que je viens de Belgique…\nmais devine mes origines !"],
+ ["n68","world","外国人最不了解你们文化的什么？","What do foreigners not understand about your culture?","Qu'est-ce que les étrangers ne comprennent pas de ta culture ?"],
+ ["n69","world","你最喜欢你们国家的哪个传统？","Which tradition of your country do you love most?","Quelle tradition de ton pays aimes-tu le plus ?"],
+ ["n70","world","对来你们国家旅游的人，你有什么建议？","Any advice for someone visiting your country?","Un conseil pour quelqu'un qui visite ton pays ?"],
+ ["n71","world","你想从别的文化里学到什么？","What would you like to learn from another culture?","Qu'est-ce que tu aimerais apprendre d'une autre culture ?"],
+ ["n72","world","你出过国吗？什么让你感到惊讶？","Have you traveled abroad? What surprised you?","Tu as déjà voyagé à l'étranger ? Qu'est-ce qui t'a surpris ?"],
+ ["n73","world","什么能把全世界的人连在一起？","What brings people all over the world together?","Qu'est-ce qui rapproche les gens du monde entier ?"],
+ ["n74","world","你最想会说哪种语言？","Which language would you love to speak?","Quelle langue aimerais-tu parler ?"],
+ ["n75","time","你觉得五十年后的世界会是什么样？","What will the world look like in 50 years?","Comment sera le monde dans 50 ans ?"],
+ ["n76","time","从你小时候到现在，什么变化最大？","What has changed the most since you were a kid?","Qu'est-ce qui a le plus changé depuis que tu es petit ?"],
+ ["n77","time","你想把什么传给你的孩子？","What do you want to pass on to your children?","Qu'est-ce que tu veux transmettre à tes enfants ?"],
+ ["n78","time","如果可以重过一天，你会选哪一天？","If you could relive one day, which would it be?","Si tu pouvais revivre une journée, laquelle ?"],
+ ["n79","time","你会做什么来照顾好自己？","What do you do to take care of yourself?","Qu'est-ce que tu fais pour prendre soin de toi ?"],
+ ["n80","time","你有什么问题想问我吗？","Is there a question you'd like to ask me?","Une question que tu aimerais me poser ?",["我现在可能没办法回答你，\n但我会把答案放进视频里！","I may not be able to answer right now,\nbut I'll put my answer in the video!","Je ne pourrai pas te répondre maintenant,\nmais je mettrai la réponse dans la vidéo !"]],
+];
+const FIXED = {
+ hook:   ["你好！我来自比利时 🇧🇪\n我不会说中文 😅\n但我想认识你！","Hi! I'm from Belgium 🇧🇪\nI don't speak your language 😅\nbut I'd love to get to know you!","Salut ! Je viens de Belgique 🇧🇪\nJe ne parle pas ta langue 😅\nmais j'aimerais te connaître !"],
+ ask:    ["可以问你几个问题吗？\n只要两分钟。","Can I ask you a few questions?\nJust two minutes.","Je peux te poser quelques questions ?\nJuste deux minutes."],
+ consent:["我会拍视频发到网上。\n你同意吗？\n不想露脸也可以。","I'm filming to post online.\nIs that okay with you?\nYou can also keep your face hidden.","Je filme pour publier en ligne.\nTu es d'accord ?\nTu peux aussi ne pas montrer ton visage."],
+ instr:  ["请用中文回答，\n我之后会翻译 🙏","Answer in your own language,\nI'll translate later 🙏","Réponds dans ta langue,\nje traduirai après 🙏"],
+ nameIn: ["请写下你的名字 ✍️","Write your name here ✍️","Écris ton prénom ici ✍️"],
+ name:   ["介绍一下你自己吧！\n你从哪里来？","Tell us about yourself!\nWhere are you from?","Présente-toi !\nD'où viens-tu ?"],
+ status: ["你是学生，\n还是已经工作了？","Are you a student,\nor already working?","Tu es étudiant,\nou tu travailles déjà ?"],
+ student:["你学的是什么专业？","What are you studying?","Tu étudies quoi ?"],
+ worker: ["你以前学的是什么？\n现在做什么工作？","What did you study,\nand what do you do now?","Tu as étudié quoi,\net tu travailles dans quoi ?"],
+ fin:    ["完 🎬\n谢谢你！","The end 🎬\nThank you!","Fin 🎬\nMerci !"],
+ end:    ["谢谢你！🙏\n最后，想对看视频的人说一句话吗？","Thank you! 🙏\nOne last word for the people watching?","Merci ! 🙏\nUn dernier mot pour ceux qui regardent ?"]
+};
+const THEME_PROMPT = ["下一个问题，\n由你来选主题！","You pick the theme\nof the next question!","C'est toi qui choisis le thème\nde la prochaine question !"];
+const THEMES = [
+ {id:"screen",e:"🎬",t:["电影与屏幕","Movies & screens","Films et écrans"],opts:[
+  {id:"film",e:"🎬",t:["电影","Movies","Films"],qs:[
+   ["你最想成为哪个电影角色？为什么？","Which movie character would you love to be? Why?","Quel personnage de film aimerais-tu être ? Pourquoi ?"],
+   ["哪部电影让你哭过？","Which movie made you cry?","Quel film t'a fait pleurer ?"],
+   ["如果你的人生是一部电影，片名会是什么？","If your life were a movie, what would the title be?","Si ta vie était un film, quel serait son titre ?"]]},
+  {id:"serie",e:"📺",t:["电视剧","Series","Séries"],qs:[
+   ["你看过最多遍的电视剧是哪部？","Which series have you rewatched the most?","Quelle série as-tu regardée le plus de fois ?"],
+   ["你最想住进哪部电视剧的世界？","Which series' world would you want to live in?","Dans l'univers de quelle série aimerais-tu vivre ?"],
+   ["哪个电视剧角色最像你？","Which TV character is most like you?","Quel personnage de série te ressemble le plus ?"]]},
+  {id:"anime",e:"✨",t:["动漫","Anime","Animés"],qs:[
+   ["哪部动漫对你影响最大？","Which anime has influenced you the most?","Quel animé t'a le plus marqué ?"],
+   ["如果你是动漫角色，你的超能力是什么？","If you were an anime character, what would your power be?","Si tu étais un personnage d'animé, quel serait ton pouvoir ?"],
+   ["你最喜欢的动漫角色是谁？为什么？","Who's your favorite anime character, and why?","Ton personnage d'animé préféré, et pourquoi ?"]]},
+  {id:"game",e:"🎮",t:["电子游戏","Video games","Jeux vidéo"],qs:[
+   ["你玩得最久的游戏是哪一个？","Which game have you spent the most time on?","À quel jeu as-tu passé le plus de temps ?"],
+   ["如果能住进一个游戏世界，你选哪个？","If you could live in a game world, which one?","Si tu pouvais vivre dans l'univers d'un jeu, lequel ?"],
+   ["游戏教会了你什么？","What has gaming taught you?","Qu'est-ce que les jeux vidéo t'ont appris ?"]]}]},
+ {id:"leisure",e:"⚽",t:["爱好","Hobbies","Loisirs"],opts:[
+  {id:"sport",e:"⚽",t:["运动","Sport","Sport"],qs:[
+   ["什么运动让你感觉最好？","Which sport makes you feel your best?","Quel sport te fait te sentir le mieux ?"],
+   ["你最喜欢的运动员是谁？为什么？","Who's your favorite athlete, and why?","Ton sportif préféré, et pourquoi ?"],
+   ["如果明天能成为某项运动的冠军，你选哪项？","If you could be a champion in one sport tomorrow, which one?","Si tu pouvais être champion d'un sport demain, lequel ?"]]},
+  {id:"music",e:"🎵",t:["音乐","Music","Musique"],qs:[
+   ["哪首歌能马上让你心情变好？","Which song instantly puts you in a good mood?","Quelle chanson te met tout de suite de bonne humeur ?"],
+   ["你最想学哪种乐器？","Which instrument would you love to learn?","Quel instrument aimerais-tu apprendre ?"],
+   ["如果你的人生有一首主题曲，会是哪首？","If your life had a theme song, what would it be?","Si ta vie avait une chanson, ce serait laquelle ?"]]},
+  {id:"book",e:"📚",t:["阅读","Reading","Lecture"],qs:[
+   ["哪本书改变了你？","Which book changed you?","Quel livre t'a changé ?"],
+   ["你最想住进哪本书的世界？","Which book's world would you want to live in?","Dans l'univers de quel livre aimerais-tu vivre ?"],
+   ["你会推荐每个人读哪本书？","Which book would you recommend to everyone?","Quel livre conseillerais-tu à tout le monde ?"]]},
+  {id:"trip",e:"✈️",t:["旅行","Travel","Voyage"],qs:[
+   ["你去过最美的地方是哪里？","What's the most beautiful place you've been to?","Quel est le plus bel endroit où tu sois allé ?"],
+   ["旅行中发生过最好笑的事是什么？","What's the funniest thing that happened to you while traveling?","Le truc le plus drôle qui t'est arrivé en voyage ?"],
+   ["你最想和谁一起去旅行？","Who would you most like to travel with?","Avec qui aimerais-tu le plus voyager ?"]]}]},
+ {id:"food",e:"🍜",t:["美食","Food","À table"],opts:[
+  {id:"savory",e:"🍜",t:["咸的菜","Savory dishes","Plats salés"],qs:[
+   ["如果一辈子只能吃一道菜，你选什么？","If you could eat only one dish for life, what would it be?","Si tu ne pouvais manger qu'un seul plat toute ta vie, lequel ?"],
+   ["你做得最好的菜是什么？","What's the dish you cook best?","Quel plat cuisines-tu le mieux ?"],
+   ["你吃过最奇怪的东西是什么？","What's the strangest thing you've ever eaten?","Le truc le plus bizarre que tu aies mangé ?"]]},
+  {id:"sweet",e:"🍰",t:["甜点","Desserts","Desserts"],qs:[
+   ["你最喜欢的甜点是什么？","What's your favorite dessert?","Ton dessert préféré ?"],
+   ["你小时候最爱的零食是什么？","What was your favorite snack as a kid?","Ton goûter préféré quand tu étais petit ?"],
+   ["甜的还是咸的？为什么？","Sweet or salty? Why?","Sucré ou salé ? Pourquoi ?"]]},
+  {id:"drink",e:"🧋",t:["饮料","Drinks","Boissons"],qs:[
+   ["你每天必喝的饮料是什么？","Which drink can't you go a day without?","La boisson que tu bois tous les jours ?"],
+   ["茶还是咖啡？为什么？","Tea or coffee? Why?","Thé ou café ? Pourquoi ?"],
+   ["你最想推荐给外国人的饮料是什么？","Which drink would you recommend to a foreigner?","Quelle boisson conseillerais-tu à un étranger ?"]]},
+  {id:"home",e:"🏠",t:["家常菜","Home cooking","Fait maison"],qs:[
+   ["家里谁做饭最好吃？","Who's the best cook in your family?","Qui cuisine le mieux dans ta famille ?"],
+   ["你最想学会做哪道菜？","Which dish would you love to learn to cook?","Quel plat aimerais-tu apprendre à cuisiner ?"],
+   ["哪道家常菜让你想起某个人？","Which home-cooked dish reminds you of someone?","Quel plat fait maison te rappelle quelqu'un ?"]]}]},
+ {id:"imagine",e:"🚀",t:["想象","Imagination","Imaginaire"],opts:[
+  {id:"power",e:"🦸",t:["超能力","Superpowers","Super-pouvoirs"],qs:[
+   ["有了超能力，你做的第一件事是什么？","What's the first thing you'd do with a superpower?","Quelle est la première chose que tu ferais avec un super-pouvoir ?"],
+   ["隐身还是飞行？为什么？","Invisibility or flying? Why?","Être invisible ou voler ? Pourquoi ?"],
+   ["如果你是超级英雄，你的弱点是什么？","If you were a superhero, what would your weakness be?","Si tu étais un super-héros, quelle serait ta faiblesse ?"]]},
+  {id:"future",e:"🤖",t:["未来","The future","Le futur"],qs:[
+   ["你觉得机器人会取代你的工作吗？","Do you think robots will replace your job?","Tu penses que les robots vont remplacer ton métier ?"],
+   ["如果能去未来看一眼，你想看什么？","If you could take a peek at the future, what would you look at?","Si tu pouvais jeter un œil au futur, tu regarderais quoi ?"],
+   ["未来你最想要什么发明？","Which future invention do you want most?","Quelle invention du futur voudrais-tu le plus ?"]]},
+  {id:"space",e:"🪐",t:["太空","Space","L'espace"],qs:[
+   ["如果可以去太空，你会去吗？","If you could go to space, would you go?","Si tu pouvais aller dans l'espace, tu irais ?"],
+   ["你相信有外星人吗？","Do you believe in aliens?","Tu crois aux extraterrestres ?"],
+   ["如果遇到外星人，你会对他说什么？","If you met an alien, what would you tell it?","Si tu rencontrais un extraterrestre, tu lui dirais quoi ?"]]},
+  {id:"magic",e:"🪄",t:["魔法","Magic","Magie"],qs:[
+   ["如果有一根魔法棒，你会变出什么？","If you had a magic wand, what would you make appear?","Si tu avais une baguette magique, tu ferais apparaître quoi ?"],
+   ["你有三个愿望，你会许什么？","You have three wishes. What are they?","Tu as trois vœux. Lesquels ?"],
+   ["你想养什么神奇的动物？","Which magical creature would you want as a pet?","Quelle créature magique aimerais-tu avoir comme animal ?"]]}]},
+ {id:"nature",e:"🌿",t:["大自然","Nature","Nature"],opts:[
+  {id:"animal",e:"🐼",t:["动物","Animals","Animaux"],qs:[
+   ["如果能和一种动物说话，你选哪种？","If you could talk to one animal, which one?","Si tu pouvais parler à un animal, lequel ?"],
+   ["你最喜欢什么动物？为什么？","What's your favorite animal, and why?","Ton animal préféré, et pourquoi ?"],
+   ["你养过宠物吗？它教会了你什么？","Have you had a pet? What did it teach you?","Tu as déjà eu un animal ? Qu'est-ce qu'il t'a appris ?"]]},
+  {id:"sea",e:"🌊",t:["大海","The sea","La mer"],qs:[
+   ["你最美好的海边回忆是什么？","What's your best memory at the seaside?","Ton plus beau souvenir à la mer ?"],
+   ["你愿意住在海边吗？","Would you like to live by the sea?","Tu aimerais vivre au bord de la mer ?"],
+   ["大海让你想到什么？","What does the sea make you think of?","À quoi te fait penser la mer ?"]]},
+  {id:"mountain",e:"⛰️",t:["山","Mountains","Montagne"],qs:[
+   ["你爬过最高的山是哪座？","What's the highest mountain you've climbed?","Quelle est la plus haute montagne que tu aies montée ?"],
+   ["山里的安静，还是城市的热闹？","The calm of the mountains or the buzz of the city?","Le calme de la montagne ou l'agitation de la ville ?"],
+   ["你在大自然里最放松的时刻是什么？","What's your most relaxing moment in nature?","Ton moment le plus apaisant dans la nature ?"]]},
+  {id:"season",e:"🍂",t:["季节","Seasons","Saisons"],qs:[
+   ["你最喜欢哪个季节？为什么？","Which season do you love most, and why?","Ta saison préférée, et pourquoi ?"],
+   ["哪个季节让你想起童年？","Which season reminds you of your childhood?","Quelle saison te rappelle ton enfance ?"],
+   ["下雨天你喜欢做什么？","What do you like to do on rainy days?","Qu'est-ce que tu aimes faire quand il pleut ?"]]}]},
+ {id:"people",e:"👥",t:["身边的人","The people around you","Les gens autour de toi"],opts:[
+  {id:"family",e:"👨‍👩‍👧",t:["家人","Family","Famille"],qs:[
+   ["你和家人最喜欢一起做什么？","What do you love doing with your family?","Qu'est-ce que tu préfères faire en famille ?"],
+   ["家里谁最像你？","Who in your family is most like you?","Qui te ressemble le plus dans ta famille ?"],
+   ["你想为什么事对家人说声谢谢？","What would you like to thank your family for?","Pour quoi aimerais-tu dire merci à ta famille ?"]]},
+  {id:"friends",e:"🤝",t:["朋友","Friends","Amis"],qs:[
+   ["你和最好的朋友是怎么认识的？","How did you meet your best friend?","Comment as-tu rencontré ton meilleur ami ?"],
+   ["你和朋友一起做过最疯狂的事是什么？","What's the craziest thing you've done with friends?","Le truc le plus fou que tu aies fait avec tes amis ?"],
+   ["你最想念哪个老朋友？","Which old friend do you miss the most?","Quel ancien ami te manque le plus ?"]]},
+  {id:"love",e:"❤️",t:["爱情","Love","Amour"],qs:[
+   ["你相信一见钟情吗？","Do you believe in love at first sight?","Tu crois au coup de foudre ?"],
+   ["对你来说，最浪漫的事是什么？","What's the most romantic thing, for you?","C'est quoi le plus romantique, pour toi ?"],
+   ["你会给正在恋爱的人什么建议？","What advice would you give someone in love?","Quel conseil donnerais-tu à quelqu'un d'amoureux ?"]]},
+  {id:"stranger",e:"🙋",t:["陌生人","Strangers","Inconnus"],qs:[
+   ["陌生人为你做过最好的事是什么？","What's the nicest thing a stranger has done for you?","La plus belle chose qu'un inconnu ait faite pour toi ?"],
+   ["你上一次帮助陌生人是什么时候？","When did you last help a stranger?","La dernière fois que tu as aidé un inconnu, c'était quand ?"],
+   ["如果能对路上所有人说一句话，你会说什么？","If you could say one sentence to everyone on this street, what would it be?","Si tu pouvais dire une phrase à tous les gens dans la rue, ce serait quoi ?"]]}]},
+ {id:"rather",e:"🤔",t:["你更想……？","Would you rather…?","Tu préfères… ?"],opts:[
+  {id:"life",e:"⏳",t:["人生","Life","La vie"],qs:[
+   ["你更想回到过去，还是去未来？","Would you rather go back to the past or visit the future?","Tu préfères retourner dans le passé ou aller dans le futur ?"],
+   ["你更想活得很长，还是活得很精彩？","Would you rather live a long life or an exciting one?","Tu préfères une vie très longue ou une vie très intense ?"],
+   ["你更想永远二十岁，还是拥有八十岁的智慧？","Would you rather be 20 forever or have the wisdom of an 80-year-old?","Tu préfères avoir 20 ans pour toujours ou la sagesse de tes 80 ans ?"]]},
+  {id:"money",e:"💰",t:["金钱","Money","L'argent"],qs:[
+   ["你更想很有钱但没朋友，还是没钱但有很多朋友？","Rich with no friends, or broke with lots of friends?","Riche sans amis, ou fauché avec plein d'amis ?"],
+   ["你更想中彩票，还是找到梦想的工作？","Win the lottery or find your dream job?","Gagner au loto ou trouver le travail de tes rêves ?"],
+   ["你更想要一栋大房子，还是环游世界？","A big house or a trip around the world?","Une grande maison ou un tour du monde ?"]]},
+  {id:"daily",e:"☕",t:["日常","Everyday life","Le quotidien"],qs:[
+   ["你更想永远不用睡觉，还是永远不用吃饭？","Never need to sleep, or never need to eat?","Ne plus jamais dormir, ou ne plus jamais manger ?"],
+   ["你更想一个月不用手机，还是一年不听音乐？","No phone for a month, or no music for a year?","Pas de téléphone pendant un mois, ou pas de musique pendant un an ?"],
+   ["你更想住在城市，还是乡下？","City or countryside?","Vivre en ville ou à la campagne ?"]]},
+  {id:"talent",e:"🎨",t:["才能","Talents","Les talents"],qs:[
+   ["你更想会说所有语言，还是会弹所有乐器？","Speak every language, or play every instrument?","Parler toutes les langues, ou jouer de tous les instruments ?"],
+   ["你更想非常聪明，还是非常幽默？","Very smart or very funny?","Être très intelligent ou très drôle ?"],
+   ["你更想会画画，还是会唱歌？","Be able to draw or to sing?","Savoir dessiner ou savoir chanter ?"]]}]},
+ {id:"memories",e:"📸",t:["回忆","Memories","Souvenirs"],opts:[
+  {id:"school",e:"🏫",t:["学校","School","L'école"],qs:[
+   ["你最喜欢的老师是谁？为什么？","Who was your favorite teacher, and why?","Ton prof préféré, et pourquoi ?"],
+   ["你在学校最难忘的回忆是什么？","What's your most unforgettable school memory?","Ton souvenir d'école le plus inoubliable ?"],
+   ["你最喜欢上什么课？","What was your favorite subject?","Ta matière préférée ?"]]},
+  {id:"holiday",e:"🏖️",t:["假期","Holidays","Vacances"],qs:[
+   ["你最难忘的假期是哪一次？","What was your most unforgettable holiday?","Tes vacances les plus inoubliables ?"],
+   ["小时候放假你都做什么？","What did you do during holidays as a kid?","Tu faisais quoi pendant les vacances, petit ?"],
+   ["你理想中的假期是什么样的？","What does your ideal holiday look like?","Tes vacances idéales, elles ressemblent à quoi ?"]]},
+  {id:"first",e:"⭐",t:["第一次","First times","Premières fois"],qs:[
+   ["你第一次离开家是什么感觉？","How did it feel the first time you left home?","Qu'as-tu ressenti la première fois que tu as quitté la maison ?"],
+   ["你还记得第一次赚钱吗？","Do you remember the first money you earned?","Tu te souviens du premier argent que tu as gagné ?"],
+   ["你最近第一次尝试的事情是什么？","What's the last thing you tried for the first time?","La dernière chose que tu as faite pour la première fois ?"]]},
+  {id:"party",e:"🎉",t:["节日","Celebrations","Fêtes"],qs:[
+   ["你最喜欢的节日是什么？为什么？","What's your favorite celebration, and why?","Ta fête préférée, et pourquoi ?"],
+   ["你过得最好的一个生日是哪一次？","What was your best birthday ever?","Ton plus bel anniversaire ?"],
+   ["你们家过节有什么特别的习惯？","What special habit does your family have for celebrations?","Quelle tradition spéciale a ta famille pour les fêtes ?"]]}]},
+ {id:"style",e:"👗",t:["穿搭与时尚","Style & fashion","Style et mode"],opts:[
+  {id:"clothes",e:"👕",t:["衣服","Clothes","Vêtements"],qs:[
+   ["你今天为什么选了这身衣服？","Why did you pick this outfit today?","Pourquoi as-tu choisi cette tenue aujourd'hui ?"],
+   ["你衣柜里最喜欢的一件衣服是什么？","What's your favorite piece of clothing?","Ton vêtement préféré dans ton armoire ?"],
+   ["你买过最后悔的衣服是什么？","What's the piece of clothing you regret buying the most?","Le vêtement que tu regrettes le plus d'avoir acheté ?"]]},
+  {id:"shoes",e:"👟",t:["鞋子","Shoes","Chaussures"],qs:[
+   ["你现在穿的鞋有什么故事吗？","Is there a story behind the shoes you're wearing?","Il y a une histoire derrière les chaussures que tu portes ?"],
+   ["舒服还是好看，你选哪个？","Comfort or style: which do you choose?","Confort ou style : tu choisis quoi ?"],
+   ["你一共有几双鞋？","How many pairs of shoes do you own?","Tu as combien de paires de chaussures ?"]]},
+  {id:"hair",e:"💇",t:["发型","Hairstyle","Coiffure"],qs:[
+   ["你做过最疯狂的发型是什么？","What's the craziest hairstyle you've ever had?","La coiffure la plus folle que tu aies eue ?"],
+   ["如果明天必须换发型，你会选什么？","If you had to change your hairstyle tomorrow, what would you pick?","Si tu devais changer de coiffure demain, tu choisirais quoi ?"],
+   ["你多久剪一次头发？","How often do you get a haircut?","Tu vas chez le coiffeur tous les combien ?"]]},
+  {id:"acc",e:"⌚",t:["配饰","Accessories","Accessoires"],qs:[
+   ["你每天都戴的东西是什么？","What do you wear every single day?","Qu'est-ce que tu portes tous les jours ?"],
+   ["你身上有没有对你很有意义的东西？","Are you wearing something that means a lot to you?","Tu portes quelque chose qui compte beaucoup pour toi ?"],
+   ["你收到过最好的配饰礼物是什么？","What's the best accessory you've received as a gift?","Le plus bel accessoire qu'on t'ait offert ?"]]}]},
+ {id:"social",e:"📱",t:["社交媒体","Social media","Réseaux sociaux"],opts:[
+  {id:"short",e:"🎞️",t:["短视频","Short videos","Vidéos courtes"],qs:[
+   ["你每天刷短视频多久？","How long do you watch short videos every day?","Tu passes combien de temps par jour sur les vidéos courtes ?"],
+   ["最近让你笑出来的视频是什么？","What's the last video that made you laugh?","La dernière vidéo qui t'a fait rire ?"],
+   ["如果你拍视频，你会拍什么？","If you made videos, what would they be about?","Si tu faisais des vidéos, elles parleraient de quoi ?"]]},
+  {id:"photos",e:"📸",t:["照片","Photos","Photos"],qs:[
+   ["你手机里最珍贵的一张照片是什么？","What's the most precious photo on your phone?","La photo la plus précieuse de ton téléphone ?"],
+   ["你手机里有多少张照片？","How many photos are on your phone?","Combien de photos as-tu dans ton téléphone ?"],
+   ["你最常拍什么？","What do you photograph the most?","Qu'est-ce que tu prends le plus en photo ?"]]},
+  {id:"msg",e:"💬",t:["聊天","Messages","Messages"],qs:[
+   ["你每天聊天最多的人是谁？","Who do you message the most every day?","À qui envoies-tu le plus de messages ?"],
+   ["你最常用的表情是哪个？","Which emoji do you use the most?","Ton emoji le plus utilisé ?"],
+   ["你收到过最暖心的消息是什么？","What's the sweetest message you've ever received?","Le message le plus touchant que tu aies reçu ?"]]},
+  {id:"influ",e:"⭐",t:["网红","Influencers","Influenceurs"],qs:[
+   ["你最喜欢关注哪个博主？为什么？","Which creator do you love following, and why?","Quel créateur aimes-tu suivre, et pourquoi ?"],
+   ["你想成为网红吗？","Would you like to be famous online?","Tu aimerais être célèbre sur internet ?"],
+   ["网络上有人改变过你的想法吗？","Has someone online ever changed your mind about something?","Quelqu'un sur internet t'a déjà fait changer d'avis ?"]]}]},
+ {id:"values",e:"🙏",t:["信念与价值观","Beliefs & values","Spiritualité et valeurs"],opts:[
+  {id:"faith",e:"🕊️",t:["信念","Faith","Foi"],qs:[
+   ["在困难的时候，什么给你力量？","What gives you strength in hard times?","Qu'est-ce qui te donne de la force dans les moments difficiles ?"],
+   ["你相信什么？","What do you believe in?","En quoi crois-tu ?"],
+   ["有什么让你内心平静？","What brings you inner peace?","Qu'est-ce qui t'apporte la paix intérieure ?"]]},
+  {id:"grat",e:"💛",t:["感恩","Gratitude","Gratitude"],qs:[
+   ["今天你感谢什么？","What are you grateful for today?","Pour quoi es-tu reconnaissant aujourd'hui ?"],
+   ["你最想感谢的人是谁？","Who would you most like to thank?","Qui aimerais-tu le plus remercier ?"],
+   ["有什么小事每天都让你开心？","What small thing makes you happy every day?","Quelle petite chose te rend heureux chaque jour ?"]]},
+  {id:"forgive",e:"🤝",t:["原谅","Forgiveness","Pardon"],qs:[
+   ["原谅别人难吗？","Is it hard to forgive someone?","C'est difficile de pardonner ?"],
+   ["你希望谁原谅你？","Who would you like to be forgiven by?","Par qui aimerais-tu être pardonné ?"],
+   ["你原谅过自己什么？","What have you forgiven yourself for?","Qu'est-ce que tu t'es pardonné à toi-même ?"]]},
+  {id:"meaning",e:"🌟",t:["人生意义","Meaning of life","Sens de la vie"],qs:[
+   ["你觉得我们为什么活着？","Why do you think we're here?","Pourquoi penses-tu qu'on est là ?"],
+   ["你想被人怎样记住？","How would you like to be remembered?","Comment aimerais-tu qu'on se souvienne de toi ?"],
+   ["什么让你的人生有意义？","What gives your life meaning?","Qu'est-ce qui donne un sens à ta vie ?"]]}]},
+ {id:"city",e:"🏙️",t:["你的城市","Your city","Ta ville"],opts:[
+  {id:"hood",e:"🏘️",t:["街区","Neighborhood","Quartier"],qs:[
+   ["你住的街区最好的地方是什么？","What's the best thing about your neighborhood?","Le meilleur truc de ton quartier ?"],
+   ["你在这个城市住了多久？","How long have you lived in this city?","Tu vis dans cette ville depuis combien de temps ?"],
+   ["你的街区有什么变了？","What has changed in your neighborhood?","Qu'est-ce qui a changé dans ton quartier ?"]]},
+  {id:"transit",e:"🚇",t:["交通","Transport","Transports"],qs:[
+   ["你每天怎么出行？","How do you get around every day?","Comment te déplaces-tu chaque jour ?"],
+   ["你在地铁上通常做什么？","What do you usually do on the metro?","Qu'est-ce que tu fais d'habitude dans le métro ?"],
+   ["你在路上遇到过最奇怪的事是什么？","What's the strangest thing you've seen on your commute?","Le truc le plus bizarre que tu aies vu dans les transports ?"]]},
+  {id:"hidden",e:"🗺️",t:["秘密地点","Hidden spots","Lieux cachés"],qs:[
+   ["游客不知道的好地方是哪里？","What great place do tourists not know about?","Un super endroit que les touristes ne connaissent pas ?"],
+   ["你一个人想静一静时会去哪里？","Where do you go when you want to be alone?","Où vas-tu quand tu veux être seul ?"],
+   ["这个城市你最喜欢的餐馆是哪家？","What's your favorite restaurant in this city?","Ton restaurant préféré dans cette ville ?"]]},
+  {id:"night",e:"🌙",t:["夜晚","Night","La nuit"],qs:[
+   ["这个城市晚上最美的地方是哪里？","Where is this city most beautiful at night?","Où cette ville est-elle la plus belle la nuit ?"],
+   ["你最晚回家是几点？","What's the latest you've ever come home?","À quelle heure es-tu rentré le plus tard ?"],
+   ["深夜你最想吃什么？","What do you crave late at night?","Qu'est-ce que tu as envie de manger tard le soir ?"]]}]},
+ {id:"jobs",e:"💼",t:["职业与梦想","Jobs & dreams","Métiers et rêves"],opts:[
+  {id:"myjob",e:"🧰",t:["你的工作","Your job","Ton métier"],qs:[
+   ["你工作中最喜欢的部分是什么？","What's your favorite part of your job?","Ce que tu préfères dans ton travail ?"],
+   ["你的工作里别人不知道的事是什么？","What don't people know about your job?","Qu'est-ce que les gens ne savent pas sur ton métier ?"],
+   ["你是怎么开始做这份工作的？","How did you start doing this job?","Comment as-tu commencé ce travail ?"]]},
+  {id:"dreamjob",e:"🚀",t:["梦想职业","Dream job","Métier de rêve"],qs:[
+   ["小时候你想做什么工作？","What job did you dream of as a child?","Quel métier rêvais-tu de faire enfant ?"],
+   ["如果不用考虑钱，你会做什么工作？","If money didn't matter, what job would you do?","Si l'argent ne comptait pas, quel métier ferais-tu ?"],
+   ["哪个工作你一天都做不下去？","Which job could you not do for even one day?","Quel métier ne pourrais-tu pas faire même une journée ?"]]},
+  {id:"boss",e:"👔",t:["老板","Boss","Patron"],qs:[
+   ["好老板应该是什么样的？","What makes a good boss?","C'est quoi un bon patron ?"],
+   ["如果你是老板，你第一件事会改什么？","If you were the boss, what would you change first?","Si tu étais le patron, que changerais-tu en premier ?"],
+   ["你想自己当老板吗？","Would you like to be your own boss?","Tu aimerais être ton propre patron ?"]]},
+  {id:"coll",e:"👥",t:["同事","Colleagues","Collègues"],qs:[
+   ["你和同事之间最好笑的事是什么？","What's the funniest moment with your colleagues?","Le moment le plus drôle avec tes collègues ?"],
+   ["理想的同事是什么样的？","What does the ideal colleague look like?","C'est quoi le collègue idéal ?"],
+   ["同事变成朋友，你觉得好吗？","Is it good when colleagues become friends?","C'est bien quand des collègues deviennent des amis ?"]]}]},
+ {id:"creative",e:"🎨",t:["创造力","Creativity","Créativité"],opts:[
+  {id:"draw",e:"✏️",t:["画画","Drawing","Dessin"],qs:[
+   ["你小时候最喜欢画什么？","What did you love drawing as a child?","Qu'est-ce que tu aimais dessiner enfant ?"],
+   ["你觉得自己画画好吗？","Do you think you're good at drawing?","Tu te trouves doué en dessin ?"],
+   ["如果能把一幅画挂在家里，你选哪幅？","If you could hang any painting at home, which one?","Si tu pouvais accrocher n'importe quel tableau chez toi, lequel ?"]]},
+  {id:"photo",e:"📷",t:["摄影","Photography","Photo"],qs:[
+   ["你拍过最美的照片是什么？","What's the most beautiful photo you've ever taken?","La plus belle photo que tu aies prise ?"],
+   ["你更喜欢拍人还是拍风景？","Do you prefer photographing people or landscapes?","Tu préfères photographier des gens ou des paysages ?"],
+   ["哪一刻你后悔没拍下来？","Which moment do you regret not photographing?","Quel moment regrettes-tu de ne pas avoir photographié ?"]]},
+  {id:"write",e:"📝",t:["写作","Writing","Écriture"],qs:[
+   ["你写过日记吗？","Have you ever kept a diary?","Tu as déjà tenu un journal intime ?"],
+   ["如果你写一本书，会写什么？","If you wrote a book, what would it be about?","Si tu écrivais un livre, il parlerait de quoi ?"],
+   ["你写过最重要的一封信或消息是什么？","What's the most important letter or message you've written?","La lettre ou le message le plus important que tu aies écrit ?"]]},
+  {id:"dance",e:"💃",t:["跳舞","Dance","Danse"],qs:[
+   ["你喜欢跳舞吗？","Do you like dancing?","Tu aimes danser ?"],
+   ["哪首歌一响你就想跳舞？","Which song makes you want to dance instantly?","Quelle chanson te donne envie de danser direct ?"],
+   ["你最后一次跳舞是什么时候？","When did you last dance?","Quand as-tu dansé pour la dernière fois ?"]]}]},
+ {id:"defis",e:"🧠",t:["小挑战","Little challenges","Petits défis"],opts:[
+  {id:"word",e:"🗣️",t:["说一个词","Say one word","Dis un mot"],qs:[
+   ["说到“幸福”，你想到的第一个词是什么？","What's the first word you think of for “happiness”?","Le premier mot qui te vient pour « bonheur » ?"],
+   ["用一个词形容这个城市！","Describe this city in one word!","Décris cette ville en un mot !"],
+   ["用一个词形容我！","Describe me in one word!","Décris-moi en un mot !"]]},
+  {id:"quick",e:"⚡",t:["快速选择","Quick choice","Choix rapide"],qs:[
+   ["快速回答！\n茶还是咖啡？\n海还是山？\n猫还是狗？","Answer fast!\nTea or coffee?\nSea or mountains?\nCat or dog?","Réponds vite !\nThé ou café ?\nMer ou montagne ?\nChat ou chien ?"],
+   ["快速回答！\n日出还是日落？\n城市还是乡村？\n甜还是咸？","Answer fast!\nSunrise or sunset?\nCity or countryside?\nSweet or salty?","Réponds vite !\nLever ou coucher du soleil ?\nVille ou campagne ?\nSucré ou salé ?"],
+   ["快速回答！\n打电话还是发消息？\n书还是电影？\n夏天还是冬天？","Answer fast!\nCall or text?\nBook or movie?\nSummer or winter?","Réponds vite !\nAppel ou message ?\nLivre ou film ?\nÉté ou hiver ?"],
+   ["快速回答！\n早上还是晚上？\n下雨还是晴天？\n热还是冷？","Answer fast!\nMorning or evening?\nRain or sunshine?\nHot or cold?","Réponds vite !\nMatin ou soir ?\nPluie ou soleil ?\nChaud ou froid ?"],
+   ["快速回答！\n汽车还是自行车？\n飞机还是火车？\n海滩还是泳池？","Answer fast!\nCar or bike?\nPlane or train?\nBeach or pool?","Réponds vite !\nVoiture ou vélo ?\nAvion ou train ?\nPlage ou piscine ?"],
+   ["快速回答！\n看电影时笑还是哭？\n说还是听？\n一个人还是一群人？","Answer fast!\nLaugh or cry at movies?\nTalk or listen?\nAlone or in a group?","Réponds vite !\nRire ou pleurer devant un film ?\nParler ou écouter ?\nSeul ou en groupe ?"],
+   ["快速回答！\n披萨还是汉堡？\n水果还是蔬菜？\n辣还是不辣？","Answer fast!\nPizza or burger?\nFruit or vegetables?\nSpicy or not spicy?","Réponds vite !\nPizza ou burger ?\nFruits ou légumes ?\nÉpicé ou pas épicé ?"],
+   ["快速回答！\n过去还是未来？\n钱还是时间？\n梦想还是现实？","Answer fast!\nPast or future?\nMoney or time?\nDream or reality?","Réponds vite !\nPassé ou futur ?\nArgent ou temps ?\nRêve ou réalité ?"],
+   ["快速回答！\n照片还是视频？\n唱歌还是跳舞？\n读还是写？","Answer fast!\nPhoto or video?\nSing or dance?\nRead or write?","Réponds vite !\nPhoto ou vidéo ?\nChanter ou danser ?\nLire ou écrire ?"],
+   ["快速回答！\n计划还是随性？\n早到还是迟到？\n整齐还是乱？","Answer fast!\nPlan or improvise?\nEarly or late?\nTidy or messy?","Réponds vite !\nPlan ou improvisation ?\nEn avance ou en retard ?\nRangé ou bordélique ?"]]},
+  {id:"complete",e:"✍️",t:["完成句子","Finish the sentence","Complète la phrase"],qs:[
+   ["幸福就是……","Happiness is…","Le bonheur, c'est…"],
+   ["人生中，永远不要……","In life, you should never…","Dans la vie, il ne faut jamais…"],
+   ["别人不知道我……","People don't know that I…","Les gens ne savent pas que je…"]]}]},
+ {id:"kidfun",e:"🐣",t:["童年趣事","Childhood fun","Enfance (version fun)"],opts:[
+  {id:"cartoon",e:"📺",t:["动画片","Cartoons","Dessins animés"],qs:[
+   ["你小时候最爱看的动画片是什么？","What was your favorite cartoon as a kid?","Ton dessin animé préféré quand tu étais petit ?"],
+   ["你小时候想成为哪个动画角色？","Which cartoon character did you want to be as a kid?","Quel personnage de dessin animé voulais-tu être petit ?"],
+   ["你还记得哪首动画片的主题曲？","Which cartoon theme song do you still remember?","De quel générique de dessin animé te souviens-tu encore ?"]]},
+  {id:"play",e:"🪀",t:["课间游戏","Playground games","Jeux de cour"],qs:[
+   ["你小时候课间最爱玩什么游戏？","What was your favorite playground game?","Ton jeu préféré dans la cour de récré ?"],
+   ["你玩什么游戏最厉害？","Which game were you the best at?","À quel jeu étais-tu le plus fort ?"],
+   ["现在的孩子还玩你小时候的游戏吗？","Do kids today still play the games you played?","Les enfants d'aujourd'hui jouent encore à tes jeux d'enfance ?"]]},
+  {id:"mischief",e:"😈",t:["调皮事","Mischief","Bêtises"],qs:[
+   ["你小时候做过最调皮的事是什么？","What's the naughtiest thing you did as a kid?","La plus grosse bêtise que tu aies faite petit ?"],
+   ["你被父母抓到过做什么坏事？","What did your parents catch you doing?","Qu'est-ce que tes parents t'ont surpris à faire ?"],
+   ["有没有一件事你父母到现在还不知道？","Is there something your parents still don't know?","Il y a une bêtise que tes parents ne savent toujours pas ?"]]},
+  {id:"gifts",e:"🎁",t:["礼物","Gifts","Cadeaux"],qs:[
+   ["你小时候收到过最好的礼物是什么？","What was the best gift you got as a kid?","Le plus beau cadeau que tu aies reçu enfant ?"],
+   ["你小时候最想要但没得到的礼物是什么？","What gift did you want as a kid but never got?","Le cadeau que tu voulais petit mais que tu n'as jamais eu ?"],
+   ["你送过别人最好的礼物是什么？","What's the best gift you've ever given?","Le plus beau cadeau que tu aies offert ?"]]}]},
+ {id:"lang",e:"🌍",t:["语言与文化","Languages & cultures","Langues et cultures"],opts:[
+  {id:"mylang",e:"🗨️",t:["你的语言","Your language","Ta langue"],qs:[
+   ["你的语言里最美的一个词是什么？","What's the most beautiful word in your language?","Le plus beau mot de ta langue ?"],
+   ["教我说一句你们的话吧！","Teach me a phrase in your language!","Apprends-moi une phrase dans ta langue !"],
+   ["你会说几种语言？","How many languages do you speak?","Tu parles combien de langues ?"]]},
+  {id:"expr",e:"💡",t:["俗语","Expressions","Expressions"],qs:[
+   ["你最喜欢的一句俗语是什么？","What's your favorite saying?","Ton expression ou proverbe préféré ?"],
+   ["有没有一句话外国人很难懂？","Is there an expression foreigners can't understand?","Une expression que les étrangers ne comprennent pas ?"],
+   ["你父母常对你说的一句话是什么？","What's something your parents always say to you?","Une phrase que tes parents te répètent tout le temps ?"]]},
+  {id:"gest",e:"👋",t:["手势","Gestures","Gestes"],qs:[
+   ["你们这里有什么特别的手势吗？","Is there a gesture that's special here?","Il y a un geste typique d'ici ?"],
+   ["哪个手势在这里不礼貌？","Which gesture is rude here?","Quel geste est impoli ici ?"],
+   ["你们怎么用手数数？","How do you count on your fingers here?","Comment comptez-vous sur les doigts ici ?"]]},
+  {id:"polite",e:"🙇",t:["礼貌","Politeness","Politesse"],qs:[
+   ["在这里，什么事情很不礼貌？","What's very impolite here?","Qu'est-ce qui est très impoli ici ?"],
+   ["外国人在这里常犯什么错？","What mistake do foreigners often make here?","Quelle erreur les étrangers font souvent ici ?"],
+   ["去别人家做客要注意什么？","What should you know when visiting someone's home here?","Que faut-il savoir quand on est invité chez quelqu'un ici ?"]]}]},
+ {id:"day",e:"⏰",t:["你的一天","Your day","Ta journée"],opts:[
+  {id:"morning",e:"🌅",t:["早上","Morning","Matin"],qs:[
+   ["你早上起来第一件事做什么？","What's the first thing you do in the morning?","La première chose que tu fais le matin ?"],
+   ["你平时几点起床？","What time do you usually wake up?","Tu te lèves à quelle heure d'habitude ?"],
+   ["你的早餐通常吃什么？","What do you usually have for breakfast?","Tu prends quoi au petit-déjeuner ?"]]},
+  {id:"noon",e:"☀️",t:["中午","Noon","Midi"],qs:[
+   ["你今天中午吃了什么？","What did you eat for lunch today?","Tu as mangé quoi ce midi ?"],
+   ["你午休吗？","Do you take a nap at lunchtime?","Tu fais la sieste le midi ?"],
+   ["你最喜欢在哪里吃午饭？","Where's your favorite place to have lunch?","Ton endroit préféré pour déjeuner ?"]]},
+  {id:"evening",e:"🌆",t:["晚上","Evening","Soir"],qs:[
+   ["你晚上回家后做什么？","What do you do when you get home in the evening?","Que fais-tu quand tu rentres le soir ?"],
+   ["睡觉前你做的最后一件事是什么？","What's the last thing you do before sleeping?","La dernière chose que tu fais avant de dormir ?"],
+   ["你一般几点睡觉？","What time do you usually go to bed?","Tu te couches à quelle heure d'habitude ?"]]},
+  {id:"weekend",e:"🛋️",t:["周末","Weekend","Week-end"],qs:[
+   ["你完美的周末是怎样的？","What does your perfect weekend look like?","À quoi ressemble ton week-end parfait ?"],
+   ["这个周末你打算做什么？","What are you doing this weekend?","Tu fais quoi ce week-end ?"],
+   ["周末你会睡懒觉吗？","Do you sleep in on weekends?","Tu fais la grasse matinée le week-end ?"]]}]}
+];
+const LI = {zh:0,en:1,fr:2};
+const PAL = [["#2340D9","#FFFFFF"],["#FFC93C","#15171C"],["#11806A","#FFFFFF"],["#6B2A8C","#FFFFFF"],["#F4F5F8","#15171C"]];
+const byId = Object.fromEntries(Q.map(q=>[q[0],q]));
+const SKIP = new Set(["hook","ask","consent","nameIn","instr","fin","theme"]); // cartes qui ne sont pas des questions
+const LANGTAG = {zh:"zh-CN",en:"en",fr:"fr"};
+
+function load(k,d){try{const v=localStorage.getItem("ci:"+k);return v?JSON.parse(v):d}catch(e){return d}}
+function save(k,v){try{localStorage.setItem("ci:"+k,JSON.stringify(v))}catch(e){}}
+
+let S = {lang:load("lang","zh"),help:load("help",true),intro:load("intro",true),sel:load("sel",["advice","past","happy","word"]),fav:new Set(load("fav",[])),n:load("n",5),src:load("src","all"),xl:load("xl","orig+fr"),xf:load("xf","h"),themeOn:load("themeOn",true),every:load("every",3)};
+S.sel = S.sel.filter(id=>byId[id]);
+let SESS = load("sessions",[]);
+function persist(){save("lang",S.lang);save("help",S.help);save("intro",S.intro);save("sel",S.sel);save("fav",[...S.fav]);save("n",S.n);save("src",S.src);save("xl",S.xl);save("xf",S.xf);save("themeOn",S.themeOn);save("every",S.every)}
+
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2600)}
+
+/* ---------- Stockage : appareil + compte ---------- */
+let DB=null, UID=null, DL=null;
+(async()=>{
+  try{ if(window.claude&&claude.use){ DL = await claude.use("downloads"); } }catch(e){DL=null}
+  try{
+    if(window.claude&&claude.use){
+      const db=await claude.use("db"), user=await claude.use("user");
+      const id = user ? await user.id() : null;
+      if(db && id){
+        DB=db; UID=id;
+        const snap = await db.collection("data/users/"+id).get();
+        const remote = snap.docs.filter(d=>d.exists).map(d=>d.data());
+        const map = new Map(SESS.map(s=>[s.id,s]));
+        for(const r of remote){const l=map.get(r.id); if(!l || (r.updated||0)>(l.updated||0)) map.set(r.id,r)}
+        // pousse les sessions locales absentes du compte
+        for(const l of map.values()){ if(!remote.find(r=>r.id===l.id)) { try{await db.collection("data/users/"+id).doc(l.id).set(l)}catch(e){} } }
+        SESS=[...map.values()].sort((a,b)=>b.created-a.created); save("sessions",SESS);
+        if(!$("#history").hidden) renderHistory();
+      }
+    }
+  }catch(e){}
+})();
+async function storeSession(s){
+  s.updated=Date.now();
+  const i=SESS.findIndex(x=>x.id===s.id); i>=0?SESS[i]=s:SESS.unshift(s);
+  save("sessions",SESS);
+  if(DB&&UID){try{await DB.collection("data/users/"+UID).doc(s.id).set(JSON.parse(JSON.stringify(s)))}catch(e){}}
+}
+async function removeSession(id){
+  SESS=SESS.filter(x=>x.id!==id); save("sessions",SESS);
+  if(DB&&UID){try{await DB.collection("data/users/"+UID).doc(id).delete()}catch(e){}}
+}
+
+/* ---------- Vues ---------- */
+function go(view){["setup","history","detail"].forEach(v=>$("#"+v).hidden=v!==view);window.scrollTo(0,0)}
+
+/* ---------- Préparation ---------- */
+function renderLib(){
+  let h="";
+  for(const [k,cat] of Object.entries(CATS)){
+    h+=`<div class="cat" style="--c:${cat.c}">${cat.fr}</div>`;
+    for(const q of Q.filter(q=>q[1]===k)){
+      const i=S.sel.indexOf(q[0]);
+      h+=`<div class="q ${i>=0?"on":""}"><button class="main" data-id="${q[0]}" aria-pressed="${i>=0}"><span class="n">${i>=0?i+1:""}</span><span class="t"><b>${esc(q[4])}</b><small>${esc(q[2])}</small></span></button><button class="star" data-fav="${q[0]}" aria-label="Favorite" aria-pressed="${S.fav.has(q[0])}">★</button></div>`;
+    }
+  }
+  $("#lib").innerHTML=h;
+  $("#chosen").innerHTML = S.sel.length ? S.sel.map(id=>`<li><span>${esc(byId[id][4])}</span><button data-rm="${id}" aria-label="Retirer">✕</button></li>`).join("") : `<p class="empty">Touche des questions à gauche, ou tire-les au hasard.</p>`;
+  $("#cnt").textContent=S.n;
+  document.querySelectorAll("#langSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.l===S.lang));
+  document.querySelectorAll("#srcSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.s===S.src));
+  $("#helpTog").setAttribute("aria-pressed",S.help);
+  $("#introTog").setAttribute("aria-pressed",S.intro);
+  $("#themeTog").setAttribute("aria-pressed",S.themeOn); $("#every").textContent=S.every;
+  $("#histBtn").textContent = `Mes interviews${SESS.length?" ("+SESS.length+")":""}`;
+  persist();
+}
+$("#lib").addEventListener("click",e=>{
+  const f=e.target.closest("[data-fav]");
+  if(f){const id=f.dataset.fav;S.fav.has(id)?S.fav.delete(id):S.fav.add(id);renderLib();return}
+  const m=e.target.closest("[data-id]");
+  if(m){const id=m.dataset.id,i=S.sel.indexOf(id);i>=0?S.sel.splice(i,1):S.sel.push(id);renderLib()}
+});
+$("#chosen").addEventListener("click",e=>{const r=e.target.closest("[data-rm]");if(r){S.sel=S.sel.filter(x=>x!==r.dataset.rm);renderLib()}});
+$("#clear").onclick=()=>{S.sel=[];renderLib()};
+$("#langSeg").onclick=e=>{const b=e.target.closest("button");if(b){S.lang=b.dataset.l;renderLib()}};
+$("#srcSeg").onclick=e=>{const b=e.target.closest("button");if(b){S.src=b.dataset.s;renderLib()}};
+$("#helpTog").onclick=()=>{S.help=!S.help;renderLib()};
+$("#introTog").onclick=()=>{S.intro=!S.intro;renderLib()};
+$("#themeTog").onclick=()=>{S.themeOn=!S.themeOn;renderLib()};
+$("#eMinus").onclick=()=>{S.every=Math.max(1,S.every-1);renderLib()};
+$("#ePlus").onclick=()=>{S.every=Math.min(10,S.every+1);renderLib()};
+$("#minus").onclick=()=>{S.n=Math.max(1,S.n-1);renderLib()};
+$("#plus").onclick=()=>{S.n=Math.min(Q.length,S.n+1);renderLib()};
+function shuffle(a){a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+$("#dice").onclick=()=>{
+  let pool=S.src==="fav"?Q.filter(q=>S.fav.has(q[0])):Q;
+  if(!pool.length){toast("Aucune favorite : touche ★ à côté des questions que tu aimes.");return}
+  S.sel=shuffle(pool.map(q=>q[0])).slice(0,S.n);renderLib();
+};
+$("#histBtn").onclick=()=>{renderHistory();go("history")};
+$("#histBack").onclick=()=>{renderLib();go("setup")};
+
+/* ---------- Interview ---------- */
+let deck=[],pos=0,guest="",curLang="zh";
+function txts(item){return item.kind==="q"?byId[item.id].slice(2,5):item.kind==="tq"?item.t:FIXED[item.id]}
+function txt(item,l){return txts(item)[LI[l]]}
+function build(){
+  deck=[];
+  if(S.intro)["hook","ask","consent","nameIn","instr","name","status"].forEach(id=>deck.push({kind:"f",id}));
+  S.sel.forEach((id,i)=>{deck.push({kind:"q",id}); if(S.themeOn && (i+1)%S.every===0 && i<S.sel.length-1) deck.push({kind:"theme",id:"theme"})});
+  deck.push({kind:"f",id:"end"},{kind:"f",id:"fin"});
+}
+let usedThemes=new Set(), usedTQ=new Set();
+const TPAL=[["#2340D9","#FFFFFF"],["#FFC93C","#15171C"],["#11806A","#FFFFFF"],["#E2445C","#FFFFFF"]];
+function pickTheme(avoid){
+  let pool=THEMES.filter(t=>!usedThemes.has(t.id)&&t.id!==avoid);
+  if(!pool.length){usedThemes.clear();pool=THEMES.filter(t=>t.id!==avoid)}
+  const t=pool[Math.floor(Math.random()*pool.length)]; usedThemes.add(t.id); return t.id;
+}
+function showTheme(it){
+  if(!it.theme) it.theme=pickTheme();
+  const th=THEMES.find(t=>t.id===it.theme), L=curLang, han=L==="zh";
+  const st=$("#stage"); st.style.setProperty("--card","#15171C"); st.style.setProperty("--cardink","#FFFFFF");
+  let h=`<p class="kicker ${han?"":"lat"}">🎁 ${esc(THEME_PROMPT[LI[L]]).replace(/\n/g,"<br>")}</p>`;
+  if(S.help&&L!=="fr") h+=`<p class="sub" style="margin-top:10px">${esc(THEME_PROMPT[2].replace(/\n/g," "))}</p>`;
+  h+=`<p class="tname ${han?"han":""}">${th.e} ${esc(th.t[LI[L]])}</p><div class="tiles">`;
+  th.opts.forEach((o,i)=>{const [b,f]=TPAL[i];h+=`<button class="tile ${it.chosen===o.id?"picked":""}" data-opt="${o.id}" style="--tb:${b};--tf:${f}"><span class="em">${o.e}</span><b class="${han?"han":""}">${esc(o.t[LI[L]])}</b>${S.help&&L!=="fr"?`<small>${esc(o.t[2])}</small>`:""}</button>`});
+  h+=`</div>${it.chosen?"":`<button class="reroll" id="reroll">↻ Autre thème</button>`}`;
+  $("#wrap").innerHTML=h;
+  $("#count").textContent=`${pos+1} / ${deck.length}`;
+  $("#prog").style.width=((pos+1)/deck.length*100)+"%";
+}
+function chooseOpt(optId){
+  const it=deck[pos], th=THEMES.find(t=>t.id===it.theme), o=th.opts.find(x=>x.id===optId);
+  let idx=o.qs.map((q,i)=>i).filter(i=>!usedTQ.has(th.id+"-"+o.id+"-"+i));
+  if(!idx.length) idx=o.qs.map((q,i)=>i);
+  const i=idx[Math.floor(Math.random()*idx.length)], key=th.id+"-"+o.id+"-"+i; usedTQ.add(key);
+  const item={kind:"tq",id:key,t:o.qs[i],tag:o.t,e:o.e,th:th.t[2]+" › "+o.t[2]};
+  const nx=deck[pos+1];
+  if(it.chosen && nx && nx.kind==="tq" && nx.from===pos) {item.color=nx.color; deck[pos+1]=Object.assign(item,{from:pos})}
+  else deck.splice(pos+1,0,Object.assign(item,{from:pos}));
+  it.chosen=optId; pos++; show();
+}
+function show(){
+  const it=deck[pos]; it.seen=true;
+  if(it.kind==="theme"){showTheme(it);return}
+  if(it.color==null) it.color = pos%PAL.length;
+  const [bg,fg]=PAL[it.color];
+  const st=$("#stage"); st.style.setProperty("--card",bg); st.style.setProperty("--cardink",fg);
+  let h = it.kind==="tq" ? `<p class="ttag ${curLang==="zh"?"han":""}">${it.e} ${esc(it.tag[LI[curLang]])}</p>` : "";
+  h+=`<p class="big ${curLang==="zh"?"han":"lat"}">${esc(txt(it,curLang)).replace(/\n/g,"<br>")}</p>`;
+  if(it.kind==="q" && byId[it.id][5]) h+=`<p class="note ${curLang==="zh"?"han":""}">${esc(byId[it.id][5][LI[curLang]]).replace(/\n/g,"<br>")}</p>`;
+  if(it.id==="consent") h+=`<div class="yesno"><div>✅ ${curLang==="zh"?"同意":curLang==="en"?"Yes":"Oui"}</div><div>❌ ${curLang==="zh"?"不同意":curLang==="en"?"No":"Non"}</div></div>`;
+  if(it.id==="nameIn") h+=`<div class="namebox"><input id="gName" lang="${LANGTAG[curLang]}" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" value="${esc(guest)}"><button id="gOk">OK</button></div>`;
+  if(it.id==="status") h+=`<div class="branch"><button data-br="student">→ Étudiant</button><button data-br="worker">→ Travaille</button></div>`;
+  if(it.id==="fin") h+=`<div class="branch"><button class="finbtn" id="finSave">Enregistrer l'interview</button></div>`;
+  if(S.help && curLang!=="fr" && it.id!=="fin") h+=`<p class="sub">${esc(txt(it,"fr")).replace(/\n/g," ")}</p>`;
+  $("#wrap").innerHTML=h;
+  $("#count").textContent=`${pos+1} / ${deck.length}`;
+  $("#prog").style.width=((pos+1)/deck.length*100)+"%";
+  if(it.id==="nameIn"){
+    const inp=$("#gName");
+    inp.addEventListener("input",()=>guest=inp.value);
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();inp.blur();next()}});
+    $("#gOk").onclick=e=>{e.stopPropagation();inp.blur();next()};
+    setTimeout(()=>{try{inp.focus()}catch(e){}},250);
+  }
+  if(it.id==="fin") $("#finSave").onclick=e=>{e.stopPropagation();openSave()};
+}
+function next(){
+  const it=deck[pos];
+  if(it.id==="status" && !(deck[pos+1] && (deck[pos+1].id==="student"||deck[pos+1].id==="worker"))){toast("Choisis Étudiant ou Travaille");return}
+  if(it.id==="fin"){openSave();return}
+  if(it.kind==="theme" && !(deck[pos+1]&&deck[pos+1].kind==="tq"&&it.chosen)){toast("La personne choisit un sous-thème");return}
+  if(pos<deck.length-1){pos++;show()}
+}
+function prev(){if(pos>0){pos--;show()}}
+function insertQ(id){const at=pos+1; deck.splice(at,0,{kind:"q",id}); pos=at; show()}
+function used(){return new Set(deck.filter(d=>d.kind==="q").map(d=>d.id))}
+
+$("#go").onclick=()=>{
+  build(); pos=0; guest=""; usedThemes=new Set(); usedTQ=new Set(); curLang=S.lang; $("#stage").classList.add("open"); show();
+  try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}
+};
+function closeStage(){$("#stage").classList.remove("open");try{document.fullscreenElement&&document.exitFullscreen()}catch(e){};setTimeout(updateBanner,400)}
+$("#close").onclick=()=>{ asked().length ? openSave() : closeStage() };
+$("#back").onclick=e=>{e.stopPropagation();prev()};
+$("#wrap").addEventListener("click",e=>{
+  if(e.target.closest("input,.namebox,.finbtn"))return;
+  const tl=e.target.closest("[data-opt]"); if(tl){chooseOpt(tl.dataset.opt);return}
+  if(e.target.closest("#reroll")){const it=deck[pos]; it.theme=pickTheme(it.theme); show(); return}
+  if(deck[pos].kind==="theme" && !deck[pos].chosen) return;
+  const b=e.target.closest("[data-br]");
+  if(b){
+    const id=b.dataset.br, nx=deck[pos+1];
+    if(nx && (nx.id==="student"||nx.id==="worker")) nx.id=id; else deck.splice(pos+1,0,{kind:"f",id});
+    pos++; show(); return;
+  }
+  const r=$("#wrap").getBoundingClientRect();
+  (e.clientX - r.left) < r.width*0.3 ? prev() : next();
+});
+let sx=null;
+$("#wrap").addEventListener("touchstart",e=>{sx=e.target.closest("input")?null:e.touches[0].clientX},{passive:true});
+$("#wrap").addEventListener("touchend",e=>{
+  if(sx===null)return; const dx=e.changedTouches[0].clientX-sx; sx=null;
+  if(Math.abs(dx)>60){e.preventDefault(); dx<0?next():prev()}
+});
+document.addEventListener("keydown",e=>{
+  if(!$("#stage").classList.contains("open")||!$("#saveV").hidden)return;
+  if(e.target.closest&&e.target.closest("input"))return;
+  if(e.key==="ArrowRight"||e.key===" ")next();
+  if(e.key==="ArrowLeft")prev();
+  if(e.key==="Escape")$("#drawer").classList.contains("open")?$("#drawer").classList.remove("open"):$("#close").click();
+});
+$("#rand").onclick=e=>{
+  e.stopPropagation();
+  const u=used(); const left=Q.filter(q=>!u.has(q[0]));
+  if(!left.length){toast("Toutes les questions ont déjà été posées.");return}
+  const favLeft=left.filter(q=>S.fav.has(q[0]));
+  const pool=(S.src==="fav"&&favLeft.length)?favLeft:left;
+  insertQ(pool[Math.floor(Math.random()*pool.length)][0]);
+};
+$("#themeBtn").onclick=e=>{
+  e.stopPropagation(); const at=pos+1; deck.splice(at,0,{kind:"theme",id:"theme"}); pos=at; show();
+};
+$("#pick").onclick=e=>{
+  e.stopPropagation();
+  const u=used(); let h="";
+  for(const [k,cat] of Object.entries(CATS)){
+    h+=`<div class="cat" style="--c:${cat.c}">${cat.fr}</div>`;
+    Q.filter(q=>q[1]===k).forEach(q=>{h+=`<button data-q="${q[0]}" class="${u.has(q[0])?"done":""}"><span>${S.fav.has(q[0])?"★ ":""}${esc(q[4])}<br><small>${esc(q[2])}</small></span></button>`});
+  }
+  $("#dlist").innerHTML=h; $("#drawer").classList.add("open");
+};
+$("#dlist").onclick=e=>{const b=e.target.closest("[data-q]");if(b){$("#drawer").classList.remove("open");insertQ(b.dataset.q)}};
+$("#dclose").onclick=()=>$("#drawer").classList.remove("open");
+
+/* ---------- Enregistrement ---------- */
+function asked(){return deck.filter(d=>d.seen && !SKIP.has(d.id)).map(d=>Object.assign({id:d.id,t:txts(d),c:d.color??0},d.th?{th:d.th}:{}))}
+function openSave(){
+  $("#sName").value=guest; $("#sNote").value="";
+  const a=asked();
+  $("#sList").innerHTML = a.length ? a.map((q,i)=>`<li><span><b>${i+1}.</b> ${q.th?"🎭 ":""}${esc(q.t[2].replace(/\n/g," "))}</span></li>`).join("") : `<p class="empty">Aucune question posée.</p>`;
+  $("#saveV").hidden=false;
+}
+$("#sResume").onclick=()=>{$("#saveV").hidden=true};
+$("#sDiscard").onclick=()=>{if(confirm("Supprimer cette interview sans l'enregistrer ?")){$("#saveV").hidden=true;closeStage();renderLib();go("setup")}};
+$("#sSave").onclick=async()=>{
+  const now=Date.now();
+  const s={id:"s"+now.toString(36)+Math.random().toString(36).slice(2,6),created:now,updated:now,lang:curLang,
+    name:$("#sName").value.trim(),note:$("#sNote").value.trim(),qs:asked()};
+  await storeSession(s);
+  $("#saveV").hidden=true; closeStage(); toast("Interview enregistrée");
+  openDetail(s.id);
+};
+
+/* ---------- Historique ---------- */
+const fmtDate=t=>new Date(t).toLocaleString("fr-BE",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+function renderHistory(){
+  $("#sessList").innerHTML = SESS.length ? SESS.map(s=>`<li><button data-s="${s.id}"><span><b>${esc(s.name||"Sans nom")}</b><small>${esc(s.note||"Pas de repère")} · ${fmtDate(s.created)}</small></span><span class="num">${s.qs.length} questions</span></button></li>`).join("")
+   : `<p class="empty">Pas encore d'interview enregistrée. Lance une interview : à la carte « Fin », tu pourras l'enregistrer ici.</p>`;
+  const last=load("lastBackup",0), fresh=SESS.filter(s=>(s.updated||s.created)>last).length;
+  let info = last ? `Dernière sauvegarde envoyée : ${fmtDate(last)}.` : "Aucune sauvegarde envoyée pour l'instant.";
+  if(SESS.length) info += fresh ? ` ${fresh} interview${fresh>1?"s":""} pas encore sauvegardée${fresh>1?"s":""}.` : " Tout est sauvegardé.";
+  if(window.PWA) info += " Ne supprime jamais l'icône de l'app sans avoir envoyé une sauvegarde : ça efface les interviews.";
+  $("#bkInfo").textContent=info;
+}
+$("#sessList").onclick=e=>{const b=e.target.closest("[data-s]");if(b)openDetail(b.dataset.s)};
+
+/* ---------- Sauvegarde : fichier .json, à envoyer sur le PC (AirDrop, Fichiers) ---------- */
+$("#bkSend").onclick=async()=>{
+  if(!SESS.length){toast("Aucune interview à sauvegarder");return}
+  const now=Date.now();
+  const data=JSON.stringify({app:"cartes-interview",format:1,exported:now,sessions:SESS},null,1);
+  const name="sauvegarde-interviews_"+new Date(now).toISOString().slice(0,10)+".json";
+  if(await offer(name,new Blob([data],{type:"application/json"}),null)){save("lastBackup",now);renderHistory()}
+};
+$("#bkLoad").onclick=()=>$("#bkFile").click();
+$("#bkFile").onchange=async()=>{
+  const f=$("#bkFile").files[0]; $("#bkFile").value=""; if(!f)return;
+  let list;
+  try{const d=JSON.parse(await f.text()); list=Array.isArray(d)?d:d.sessions; if(!Array.isArray(list))throw 0}
+  catch(e){toast("Ce fichier n'est pas une sauvegarde d'interviews");return}
+  let added=0,updated=0;
+  for(const r of list){
+    if(!r||!r.id||!Array.isArray(r.qs))continue;
+    const l=SESS.find(s=>s.id===r.id);
+    if(!l){added++} else if((r.updated||0)>(l.updated||0)){updated++} else continue;
+    const i=SESS.findIndex(s=>s.id===r.id); i>=0?SESS[i]=r:SESS.push(r);
+    if(DB&&UID){try{await DB.collection("data/users/"+UID).doc(r.id).set(r)}catch(e){}}
+  }
+  SESS.sort((a,b)=>b.created-a.created); save("sessions",SESS); renderHistory();
+  toast(added||updated ? `${added} ajoutée${added>1?"s":""}, ${updated} mise${updated>1?"s":""} à jour` : "Rien de nouveau dans ce fichier");
+};
+
+/* ---------- Détail + export ---------- */
+let CUR=null;
+function exportLines(q,lang){
+  const o=q.t[LI[lang]], fr=q.t[2], en=q.t[1];
+  if(S.xl==="fr") return {main:fr,mainLang:"fr"};
+  if(S.xl==="en") return {main:en,mainLang:"en"};
+  if(S.xl==="orig") return {main:o,mainLang:lang};
+  return lang==="fr" ? {main:fr,mainLang:"fr"} : {main:o,mainLang:lang,sub:fr};
+}
+function openDetail(id){
+  CUR=SESS.find(s=>s.id===id); if(!CUR)return;
+  $("#dTitle").textContent=CUR.name||"Sans nom";
+  $("#dName").value=CUR.name||""; $("#dNote").value=CUR.note||"";
+  $("#dMeta").textContent=`${fmtDate(CUR.created)} · cartes en ${({zh:"chinois",en:"anglais",fr:"français"})[CUR.lang]} · ${CUR.qs.length} questions`;
+  document.querySelectorAll("#xLang button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.x===S.xl));
+  document.querySelectorAll("#xFmt button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===S.xf));
+  $("#zipAll").hidden=!window.JSZip;
+  $("#qsList").innerHTML=CUR.qs.map((q,i)=>{const [bg,fg]=PAL[q.c];return `<li><span class="no" style="--c:${bg};--cf:${fg}">${i+1}</span><span class="txt">${q.th?`<small style="font-family:var(--latin);display:block">🎭 ${esc(q.th)}</small>`:""}<b>${esc(q.t[2].replace(/\n/g," "))}</b><small>${esc(q.t[LI[CUR.lang]].replace(/\n/g," "))}</small></span><div class="prev"><img data-pv="${i}" alt="Aperçu du sous-titre"></div><div class="acts"><button class="pill" data-sub="${i}">PNG sous-titre</button><button class="pill" data-full="${i}">PNG plein écran</button></div></li>`}).join("");
+  go("detail"); previews();
+}
+async function previews(){
+  await fontsReady();
+  for(const img of document.querySelectorAll("[data-pv]")){
+    const q=CUR.qs[+img.dataset.pv];
+    const c=drawSub(q,CUR.lang); img.src=c.toDataURL("image/png");
+  }
+}
+$("#detBack").onclick=()=>{renderHistory();go("history")};
+$("#dName").onchange=async()=>{CUR.name=$("#dName").value.trim();$("#dTitle").textContent=CUR.name||"Sans nom";await storeSession(CUR)};
+$("#dNote").onchange=async()=>{CUR.note=$("#dNote").value.trim();await storeSession(CUR)};
+$("#xLang").onclick=e=>{const b=e.target.closest("button");if(b){S.xl=b.dataset.x;persist();openDetail(CUR.id)}};
+$("#xFmt").onclick=e=>{const b=e.target.closest("button");if(b){S.xf=b.dataset.f;persist();document.querySelectorAll("#xFmt button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.f===S.xf))}};
+$("#delSess").onclick=async()=>{if(confirm("Supprimer définitivement cette interview ?")){await removeSession(CUR.id);renderHistory();go("history")}};
+$("#copyList").onclick=async()=>{
+  const lines=[`${CUR.name||"Sans nom"}${CUR.note?" — "+CUR.note:""} (${fmtDate(CUR.created)})`,""].concat(CUR.qs.map((q,i)=>`${i+1}. ${q.t[2].replace(/\n/g," ")}\n   ${q.t[LI[CUR.lang]].replace(/\n/g," ")}`));
+  try{await navigator.clipboard.writeText(lines.join("\n"));toast("Liste copiée")}catch(e){toast("Copie impossible sur cet appareil")}
+};
+$("#qsList").onclick=async e=>{
+  const s=e.target.closest("[data-sub]"), f=e.target.closest("[data-full]");
+  if(!s&&!f)return;
+  await fontsReady();
+  const i=+(s||f).dataset[s?"sub":"full"], q=CUR.qs[i];
+  const c = s ? drawSub(q,CUR.lang) : drawFull(q,CUR.lang,S.xf);
+  const name = fileBase(i)+(s?"_sous-titre":"_plein-ecran-"+(S.xf==="h"?"16x9":"9x16"))+".png";
+  const blob = await new Promise(r=>c.toBlob(r,"image/png"));
+  offer(name,blob,c);
+};
+$("#zipAll").onclick=async()=>{
+  await fontsReady();
+  const zip=new JSZip(); const fmt=S.xf==="h"?"16x9":"9x16";
+  for(let i=0;i<CUR.qs.length;i++){
+    const q=CUR.qs[i];
+    zip.file(fileBase(i)+"_sous-titre.png", await new Promise(r=>drawSub(q,CUR.lang).toBlob(r,"image/png")));
+    zip.file(fileBase(i)+"_plein-ecran-"+fmt+".png", await new Promise(r=>drawFull(q,CUR.lang,S.xf).toBlob(r,"image/png")));
+  }
+  zip.file("questions.txt",CUR.qs.map((q,i)=>`${i+1}. ${q.t[2].replace(/\n/g," ")} | ${q.t[LI[CUR.lang]].replace(/\n/g," ")}`).join("\n"));
+  const blob=await zip.generateAsync({type:"blob"});
+  offer(safe(CUR.name||"interview")+"_"+new Date(CUR.created).toISOString().slice(0,10)+".zip",blob,null);
+};
+function safe(s){return s.replace(/[\\/:*?"<>|\n]/g,"").trim().slice(0,40)||"interview"}
+function fileBase(i){return safe(CUR.name||"interview")+"_Q"+String(i+1).padStart(2,"0")}
+/* Donne le fichier à l'utilisateur. Renvoie true si le fichier est parti (enregistré, partagé ou téléchargé). */
+async function offer(filename,blob,canvas){
+  if(DL){
+    try{await DL.save({filename,data:blob});toast("Enregistré : "+filename);return true}
+    catch(e){ if(e&&e.code==="declined")return false; if(e&&e.code==="rate_limited"){toast("Patiente une seconde et réessaie");return false} }
+  }
+  const file=new File([blob],filename,{type:blob.type||"application/octet-stream"});
+  let canShare=false; try{canShare=navigator.maxTouchPoints>1 && !!navigator.canShare && navigator.canShare({files:[file]})}catch(e){}
+  if(canShare) return shareSheet(file,canvas);
+  if(!window.claude){
+    const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename;
+    document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);
+    toast("Téléchargé : "+filename); return true;
+  }
+  if(!canvas){toast("Téléchargement indisponible ici");return false}
+  const o=document.createElement("div");o.className="imgover";
+  o.innerHTML=`<img alt=""><p>Appuie longuement sur l'image pour l'enregistrer dans tes photos.</p><button class="pill">Fermer</button>`;
+  o.querySelector("img").src=canvas.toDataURL("image/png");
+  o.querySelector("button").onclick=()=>o.remove(); document.body.appendChild(o);
+  return false;
+}
+/* iPad : le menu de partage doit s'ouvrir sur un toucher, d'où l'écran intermédiaire avec un bouton. */
+function shareSheet(file,canvas){
+  return new Promise(done=>{
+    const o=document.createElement("div");o.className="imgover";
+    o.innerHTML=`${canvas?`<img alt="">`:""}<p><b>${esc(file.name)}</b><br>AirDrop vers le PC, « Enregistrer dans Fichiers »${canvas?" ou « Enregistrer l'image »":""}.</p><div class="row"><button class="pill dark" data-a="share">Envoyer…</button><button class="pill" data-a="close">Fermer</button></div>`;
+    if(canvas) o.querySelector("img").src=canvas.toDataURL("image/png");
+    o.onclick=async e=>{
+      const a=e.target.closest("[data-a]"); if(!a)return;
+      if(a.dataset.a==="close"){o.remove();done(false);return}
+      try{await navigator.share({files:[file]}); o.remove(); toast("Envoyé : "+file.name); done(true)}
+      catch(err){ if(!err||err.name!=="AbortError") toast("Partage impossible, réessaie"); }
+    };
+    document.body.appendChild(o);
+  });
+}
+
+/* ---------- Dessin des PNG ---------- */
+let fontsOk=null;
+function fontsReady(){
+  if(!fontsOk) fontsOk=Promise.all([
+    document.fonts.load('900 64px "Noto Sans SC"',"你好问题"),
+    document.fonts.load('500 64px "Noto Sans SC"',"你好问题"),
+    document.fonts.load('800 64px "Bricolage Grotesque"',"Question"),
+    document.fonts.load('600 64px "Bricolage Grotesque"',"Question")
+  ]).catch(()=>{});
+  return fontsOk;
+}
+const HAN='"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif';
+const LAT='"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif';
+const fontFor=(lang,size,bold)=> lang==="zh" ? `${bold?900:500} ${size}px ${HAN}` : `${bold?800:600} ${size}px ${LAT}`;
+const CJK=/[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]/;
+const NOSTART=/^[，。？！、；：）》」』…,.?!;:)]/;
+function wrap(ctx,text,maxW){
+  const out=[];
+  for(const para of text.split("\n")){
+    const toks=para.match(/[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]|\s+|[^\s\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF\u3000-\u303F]+/g)||[""];
+    let line="";
+    for(const t of toks){
+      const test=line+t;
+      if(ctx.measureText(test.trimEnd()).width<=maxW || !line.trim() || NOSTART.test(t)){line=test}
+      else{out.push(line.trim()); line=t.trimStart()}
+    }
+    out.push(line.trim());
+  }
+  return out.filter((l,i,a)=>l||a.length===1);
+}
+function rrect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+
+/* Sous-titre : pastille de couleur, fond transparent autour, ~1600 px de large max */
+function drawSub(q,lang){
+  const L=exportLines(q,lang); const [bg,fg]=PAL[q.c];
+  const main=L.main.replace(/\n/g," ").replace(/ +/g," "), sub=L.sub&&L.sub.replace(/\n/g," ");
+  const fs=60, ss=36, padX=64, padY=40, gap=14, maxText=1500, radius=36;
+  const m=document.createElement("canvas").getContext("2d");
+  m.font=fontFor(L.mainLang,fs,true); const ml=wrap(m,main,maxText); const mw=Math.max(...ml.map(l=>m.measureText(l).width));
+  let sl=[],sw=0; if(sub){m.font=fontFor("fr",ss,false); sl=wrap(m,sub,maxText); sw=Math.max(...sl.map(l=>m.measureText(l).width))}
+  const lhM=fs*1.3, lhS=ss*1.3;
+  const w=Math.ceil(Math.max(mw,sw)+padX*2), h=Math.ceil(padY*2+ml.length*lhM+(sl.length?gap+sl.length*lhS:0));
+  const c=document.createElement("canvas"); c.width=w; c.height=h; const x=c.getContext("2d");
+  rrect(x,0,0,w,h,radius); x.fillStyle=bg; x.fill();
+  x.fillStyle=fg; x.textAlign="center"; x.textBaseline="middle";
+  x.font=fontFor(L.mainLang,fs,true);
+  let y=padY+lhM/2; ml.forEach(l=>{x.fillText(l,w/2,y);y+=lhM});
+  if(sl.length){x.globalAlpha=.78;x.font=fontFor("fr",ss,false);y+=gap-lhM/2+lhS/2;sl.forEach(l=>{x.fillText(l,w/2,y);y+=lhS});x.globalAlpha=1}
+  return c;
+}
+/* Plein écran : carte comme dans l'app, 1920×1080 ou 1080×1920 */
+function drawFull(q,lang,fmt){
+  const L=exportLines(q,lang); const [bg,fg]=PAL[q.c];
+  const W=fmt==="h"?1920:1080, H=fmt==="h"?1080:1920;
+  const c=document.createElement("canvas"); c.width=W; c.height=H; const x=c.getContext("2d");
+  x.fillStyle=bg; x.fillRect(0,0,W,H);
+  const maxW=W*0.8, maxH=H*0.62;
+  let fs=fmt==="h"?130:118, ml, sl=[], ss;
+  for(;fs>40;fs-=4){
+    x.font=fontFor(L.mainLang,fs,true); ml=wrap(x,L.main,maxW);
+    ss=Math.round(fs*0.36); if(L.sub){x.font=fontFor("fr",ss,false); sl=wrap(x,L.sub.replace(/\n/g," "),maxW)}
+    const th=ml.length*fs*1.28+(sl.length?fs*0.5+sl.length*ss*1.35:0);
+    x.font=fontFor(L.mainLang,fs,true);
+    if(th<=maxH && Math.max(...ml.map(l=>x.measureText(l).width))<=maxW)break;
+  }
+  const lhM=fs*1.28, lhS=ss*1.35, th=ml.length*lhM+(sl.length?fs*0.5+sl.length*lhS:0);
+  let y=(H-th)/2+lhM/2;
+  x.fillStyle=fg; x.textAlign="center"; x.textBaseline="middle";
+  x.font=fontFor(L.mainLang,fs,true); ml.forEach(l=>{x.fillText(l,W/2,y);y+=lhM});
+  if(sl.length){x.globalAlpha=.75;x.font=fontFor("fr",ss,false);y+=fs*0.5-lhM/2+lhS/2;sl.forEach(l=>{x.fillText(l,W/2,y);y+=lhS});x.globalAlpha=1}
+  return c;
+}
+
+/* ---------- Version iPad (app d'écran d'accueil) : hors ligne + mises à jour ---------- */
+// window.PWA n'existe que dans la version générée par outils/build.mjs (dossier site/).
+let NEWSW=null, wantReload=false;
+function updateBanner(){
+  const b=$("#maj"); if(b) b.remove();
+  if(!NEWSW || $("#stage").classList.contains("open") || !$("#saveV").hidden) return; // jamais pendant une interview
+  const m=document.createElement("button"); m.className="maj"; m.id="maj";
+  m.textContent="Nouvelle version disponible : toucher pour mettre à jour";
+  m.onclick=()=>{wantReload=true; m.textContent="Mise à jour…"; NEWSW.postMessage("skip")};
+  document.body.appendChild(m);
+}
+if(window.PWA){
+  $("#ver").textContent=`Version ${PWA.v} · ${new Date(PWA.d).toLocaleDateString("fr-BE",{day:"numeric",month:"long",year:"numeric"})} · fonctionne sans internet`;
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.addEventListener("controllerchange",()=>{if(wantReload){wantReload=false;location.reload()}});
+    navigator.serviceWorker.register("sw.js").then(reg=>{
+      const ready=w=>{NEWSW=w;updateBanner()};
+      if(reg.waiting && navigator.serviceWorker.controller) ready(reg.waiting);
+      reg.addEventListener("updatefound",()=>{
+        const w=reg.installing; if(!w)return;
+        w.addEventListener("statechange",()=>{if(w.state==="installed" && navigator.serviceWorker.controller) ready(w)});
+      });
+      // l'app reste souvent ouverte en arrière-plan : on revérifie à chaque retour dessus
+      document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible") reg.update().catch(()=>{})});
+    }).catch(()=>{});
+  }
+}
+
+renderLib();
+</script>
+</body>
+</html>
