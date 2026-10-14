@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="Cartes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#2340D9">
-<script>window.PWA={v:"v1",d:"2026-10-14"}</script>
+<script>window.PWA={v:"v2",d:"2026-10-14"}</script>
 <style>
 :root{
   box-sizing:border-box;
@@ -159,8 +159,17 @@ h1 span{display:block;font-family:var(--han);font-size:.5em;font-weight:500;colo
 .reroll{margin-top:22px;border:0;background:rgba(255,255,255,.14);color:#fff;font-weight:700;padding:10px 18px;border-radius:999px}
 .ttag{display:inline-flex;gap:8px;align-items:center;border:3px solid currentColor;border-radius:999px;padding:6px 18px;font-weight:900;font-size:clamp(1.1rem,2.2vw,1.6rem);margin:0 0 26px}
 .ttag.han{font-family:var(--han)}
-.yesno{display:flex;gap:24px;margin-top:40px;flex-wrap:wrap;justify-content:center}
-.yesno div{font-family:var(--han);font-weight:900;font-size:clamp(1.6rem,4vw,3rem);padding:16px 34px;border-radius:24px;border:4px solid currentColor}
+.yesno{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:34px;width:min(1000px,100%)}
+@media (max-width:700px){.yesno{grid-template-columns:1fr}}
+.yesno button{border:4px solid currentColor;background:transparent;color:inherit;border-radius:24px;padding:16px 12px;min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.yesno button.on{background:rgba(255,255,255,.22);outline:5px solid currentColor;outline-offset:4px}
+.yesno .em{font-size:clamp(1.8rem,3.4vw,2.6rem);line-height:1}
+.yesno b{font-weight:900;font-size:clamp(1.2rem,2.4vw,2rem);line-height:1.2}
+.yesno b.han{font-family:var(--han)}
+.yesno small{font-size:clamp(.8rem,1.3vw,1rem);opacity:.8;font-weight:600}
+.resume{border:2px solid var(--cobalt);margin-bottom:20px}
+.resume p{margin:0 0 12px;line-height:1.4}
+.warn{border:2px solid var(--red);color:var(--red);border-radius:12px;padding:10px 14px;font-weight:700;margin:12px 0 0}
 .branch{display:flex;gap:16px;margin-top:40px;flex-wrap:wrap;justify-content:center}
 .branch button,.finbtn{border:0;background:rgba(255,255,255,.92);color:#15171C;font-weight:800;font-size:1.1rem;padding:16px 26px;border-radius:16px}
 .namebox{margin-top:36px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:min(720px,100%)}
@@ -197,6 +206,15 @@ h1 span{display:block;font-family:var(--han);font-size:.5em;font-weight:500;colo
       </div>
       <button class="tog" id="helpTog"><i></i>Traduction FR sous la carte</button>
       <button class="tog" id="introTog"><i></i>Ouverture + présentation</button>
+    </div>
+  </div>
+  <div class="panel resume" id="resume" hidden>
+    <h2>Interview pas terminée</h2>
+    <p id="resumeInfo"></p>
+    <div class="row">
+      <button class="pill dark" id="rGo">Reprendre</button>
+      <button class="pill" id="rSave">Enregistrer</button>
+      <button class="pill danger" id="rDrop">Abandonner</button>
     </div>
   </div>
   <div class="grid">
@@ -261,6 +279,10 @@ h1 span{display:block;font-family:var(--han);font-size:.5em;font-weight:500;colo
       <div class="field"><label for="dNote">Repère pour t'en souvenir</label><input id="dNote" placeholder="ex : veste rouge, devant le métro" autocomplete="off"></div>
     </div>
     <p class="hint" id="dMeta" style="margin:0"></p>
+    <div class="row" style="margin-top:12px"><span class="lab">Consentement</span>
+      <div class="seg" id="xCons"><button data-c="oui">✅ Oui</button><button data-c="floute">😶‍🌫️ Visage flouté</button><button data-c="">Non noté</button></div>
+    </div>
+    <p class="warn" id="dWarn" hidden>😶‍🌫️ Cette personne veut que son visage soit flouté au montage.</p>
   </div>
   <div class="exp">
     <div class="row"><span class="lab">Langue des PNG</span>
@@ -305,6 +327,7 @@ h1 span{display:block;font-family:var(--han);font-size:.5em;font-weight:500;colo
     <div class="panel">
       <div class="field"><label for="sName">Prénom et nom</label><input id="sName" autocomplete="off"><small>Écrit par la personne. Tu peux le corriger.</small></div>
       <div class="field"><label for="sNote">Repère pour t'en souvenir</label><input id="sNote" placeholder="ex : veste rouge, devant le métro" autocomplete="off"></div>
+      <p id="sConsent" style="margin:0 0 14px;font-weight:700"></p>
       <h2 style="margin-top:6px">Questions posées</h2>
       <ol class="chosen" id="sList" style="max-height:none"></ol>
     </div>
@@ -439,7 +462,8 @@ const Q = [
 const FIXED = {
  hook:   ["你好！我来自比利时 🇧🇪\n我不会说中文 😅\n但我想认识你！","Hi! I'm from Belgium 🇧🇪\nI don't speak your language 😅\nbut I'd love to get to know you!","Salut ! Je viens de Belgique 🇧🇪\nJe ne parle pas ta langue 😅\nmais j'aimerais te connaître !"],
  ask:    ["可以问你几个问题吗？\n只要两分钟。","Can I ask you a few questions?\nJust two minutes.","Je peux te poser quelques questions ?\nJuste deux minutes."],
- consent:["我会拍视频发到网上。\n你同意吗？\n不想露脸也可以。","I'm filming to post online.\nIs that okay with you?\nYou can also keep your face hidden.","Je filme pour publier en ligne.\nTu es d'accord ?\nTu peux aussi ne pas montrer ton visage."],
+ consent:["我会拍视频发到网上。\n你同意吗？\n我也可以帮你把脸打码。","I'm filming to post online.\nIs that okay with you?\nI can also blur your face.","Je filme pour publier en ligne.\nTu es d'accord ?\nJe peux aussi flouter ton visage."],
+ refus:  ["没关系，谢谢你！🙏","No problem, thank you anyway! 🙏","Pas de souci, merci quand même ! 🙏"],
  instr:  ["请用中文回答，\n我之后会翻译 🙏","Answer in your own language,\nI'll translate later 🙏","Réponds dans ta langue,\nje traduirai après 🙏"],
  nameIn: ["请写下你的名字 ✍️","Write your name here ✍️","Écris ton prénom ici ✍️"],
  name:   ["介绍一下你自己吧！\n你从哪里来？","Tell us about yourself!\nWhere are you from?","Présente-toi !\nD'où viens-tu ?"],
@@ -449,6 +473,12 @@ const FIXED = {
  fin:    ["完 🎬\n谢谢你！","The end 🎬\nThank you!","Fin 🎬\nMerci !"],
  end:    ["谢谢你！🙏\n最后，想对看视频的人说一句话吗？","Thank you! 🙏\nOne last word for the people watching?","Merci ! 🙏\nUn dernier mot pour ceux qui regardent ?"]
 };
+// Boutons de la carte consentement : c'est la personne qui touche. Le choix est enregistré avec l'interview.
+const CONSENT_OPTS = [
+ {id:"oui",e:"✅",t:["同意","Yes","Oui"]},
+ {id:"floute",e:"😶‍🌫️",t:["同意，但要打码","Yes, but blur my face","Oui, mais visage flouté"]},
+ {id:"non",e:"❌",t:["不同意","No","Non"]}
+];
 const THEME_PROMPT = ["下一个问题，\n由你来选主题！","You pick the theme\nof the next question!","C'est toi qui choisis le thème\nde la prochaine question !"];
 const THEMES = [
  {id:"screen",e:"🎬",t:["电影与屏幕","Movies & screens","Films et écrans"],opts:[
@@ -764,7 +794,9 @@ const THEMES = [
 const LI = {zh:0,en:1,fr:2};
 const PAL = [["#2340D9","#FFFFFF"],["#FFC93C","#15171C"],["#11806A","#FFFFFF"],["#6B2A8C","#FFFFFF"],["#F4F5F8","#15171C"]];
 const byId = Object.fromEntries(Q.map(q=>[q[0],q]));
-const SKIP = new Set(["hook","ask","consent","nameIn","instr","fin","theme"]); // cartes qui ne sont pas des questions
+const SKIP = new Set(["hook","ask","consent","refus","nameIn","instr","fin","theme"]); // cartes qui ne sont pas des questions
+const CONSENT_LBL = {oui:"✅ Oui", floute:"😶‍🌫️ Oui, visage flouté", non:"❌ Non"};
+const consentTxt = c => CONSENT_LBL[c] || "Consentement non noté";
 const LANGTAG = {zh:"zh-CN",en:"en",fr:"fr"};
 
 function load(k,d){try{const v=localStorage.getItem("ci:"+k);return v?JSON.parse(v):d}catch(e){return d}}
@@ -863,7 +895,7 @@ $("#histBtn").onclick=()=>{renderHistory();go("history")};
 $("#histBack").onclick=()=>{renderLib();go("setup")};
 
 /* ---------- Interview ---------- */
-let deck=[],pos=0,guest="",curLang="zh";
+let deck=[],pos=0,guest="",curLang="zh",STARTED=0;
 function txts(item){return item.kind==="q"?byId[item.id].slice(2,5):item.kind==="tq"?item.t:FIXED[item.id]}
 function txt(item,l){return txts(item)[LI[l]]}
 function build(){
@@ -905,14 +937,15 @@ function chooseOpt(optId){
 }
 function show(){
   const it=deck[pos]; it.seen=true;
-  if(it.kind==="theme"){showTheme(it);return}
+  if(it.kind==="theme"){showTheme(it);saveLive();return}
   if(it.color==null) it.color = pos%PAL.length;
   const [bg,fg]=PAL[it.color];
   const st=$("#stage"); st.style.setProperty("--card",bg); st.style.setProperty("--cardink",fg);
   let h = it.kind==="tq" ? `<p class="ttag ${curLang==="zh"?"han":""}">${it.e} ${esc(it.tag[LI[curLang]])}</p>` : "";
   h+=`<p class="big ${curLang==="zh"?"han":"lat"}">${esc(txt(it,curLang)).replace(/\n/g,"<br>")}</p>`;
   if(it.kind==="q" && byId[it.id][5]) h+=`<p class="note ${curLang==="zh"?"han":""}">${esc(byId[it.id][5][LI[curLang]]).replace(/\n/g,"<br>")}</p>`;
-  if(it.id==="consent") h+=`<div class="yesno"><div>✅ ${curLang==="zh"?"同意":curLang==="en"?"Yes":"Oui"}</div><div>❌ ${curLang==="zh"?"不同意":curLang==="en"?"No":"Non"}</div></div>`;
+  if(it.id==="consent") h+=`<div class="yesno">${CONSENT_OPTS.map(o=>`<button data-cs="${o.id}" class="${it.consent===o.id?"on":""}"><span class="em">${o.e}</span><b class="${curLang==="zh"?"han":""}">${esc(o.t[LI[curLang]])}</b>${S.help&&curLang!=="fr"?`<small>${esc(o.t[2])}</small>`:""}</button>`).join("")}</div>`;
+  if(it.id==="refus") h+=`<div class="branch"><button class="finbtn" id="refusEnd">Terminer</button></div>`;
   if(it.id==="nameIn") h+=`<div class="namebox"><input id="gName" lang="${LANGTAG[curLang]}" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" value="${esc(guest)}"><button id="gOk">OK</button></div>`;
   if(it.id==="status") h+=`<div class="branch"><button data-br="student">→ Étudiant</button><button data-br="worker">→ Travaille</button></div>`;
   if(it.id==="fin") h+=`<div class="branch"><button class="finbtn" id="finSave">Enregistrer l'interview</button></div>`;
@@ -922,15 +955,19 @@ function show(){
   $("#prog").style.width=((pos+1)/deck.length*100)+"%";
   if(it.id==="nameIn"){
     const inp=$("#gName");
-    inp.addEventListener("input",()=>guest=inp.value);
+    inp.addEventListener("input",()=>{guest=inp.value;saveLive()});
     inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();inp.blur();next()}});
     $("#gOk").onclick=e=>{e.stopPropagation();inp.blur();next()};
     setTimeout(()=>{try{inp.focus()}catch(e){}},250);
   }
   if(it.id==="fin") $("#finSave").onclick=e=>{e.stopPropagation();openSave()};
+  if(it.id==="refus") $("#refusEnd").onclick=e=>{e.stopPropagation();endRefus()};
+  saveLive();
 }
 function next(){
   const it=deck[pos];
+  if(it.id==="consent" && !it.consent){toast("La personne choisit ✅, 😶‍🌫️ ou ❌");return}
+  if(it.id==="refus"){endRefus();return}
   if(it.id==="status" && !(deck[pos+1] && (deck[pos+1].id==="student"||deck[pos+1].id==="worker"))){toast("Choisis Étudiant ou Travaille");return}
   if(it.id==="fin"){openSave();return}
   if(it.kind==="theme" && !(deck[pos+1]&&deck[pos+1].kind==="tq"&&it.chosen)){toast("La personne choisit un sous-thème");return}
@@ -940,15 +977,50 @@ function prev(){if(pos>0){pos--;show()}}
 function insertQ(id){const at=pos+1; deck.splice(at,0,{kind:"q",id}); pos=at; show()}
 function used(){return new Set(deck.filter(d=>d.kind==="q").map(d=>d.id))}
 
+/* ---------- Consentement ---------- */
+function liveConsent(){const c=deck.find(d=>d.id==="consent");return (c&&c.consent)||null}
+function chooseConsent(c){
+  const it=deck[pos]; it.consent=c;
+  if(deck[pos+1] && deck[pos+1].id==="refus") deck.splice(pos+1,1); // changement d'avis après un retour en arrière
+  if(c==="non") deck.splice(pos+1,0,{kind:"f",id:"refus"});
+  pos++; show();
+}
+function endRefus(){clearLive();closeStage();renderLib();go("setup");toast("Refus noté : supprime ce passage de la vidéo")}
+
+/* ---------- Interview en cours : sauvegardée à chaque carte (veille, app fermée, page rechargée) ---------- */
+function saveLive(){save("live",{at:Date.now(),started:STARTED,deck,pos,guest,curLang,usedThemes:[...usedThemes],usedTQ:[...usedTQ]})}
+function clearLive(){try{localStorage.removeItem("ci:live")}catch(e){}}
+function getLive(){const L=load("live",null);return L&&Array.isArray(L.deck)&&L.deck.length?L:null}
+function restoreLive(L){
+  deck=L.deck; pos=Math.max(0,Math.min(L.pos|0,deck.length-1)); guest=L.guest||""; curLang=L.curLang||S.lang;
+  usedThemes=new Set(L.usedThemes||[]); usedTQ=new Set(L.usedTQ||[]); STARTED=L.started||L.at;
+}
+function openStage(){
+  $("#resume").hidden=true; $("#stage").classList.add("open"); show();
+  try{const p=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); p&&p.catch&&p.catch(()=>{})}catch(e){}
+}
+function renderResume(){
+  const L=getLive();
+  if(!L || $("#stage").classList.contains("open")){$("#resume").hidden=true;return}
+  const n=L.deck.filter(d=>d.seen&&!SKIP.has(d.id)).length, c=(L.deck.find(d=>d.id==="consent")||{}).consent;
+  $("#resumeInfo").textContent=`${L.guest?L.guest+" · ":""}${n} question${n>1?"s":""} posée${n>1?"s":""} · ${consentTxt(c)} · dernière carte ${fmtDate(L.at)}`;
+  $("#resume").hidden=false;
+}
+$("#rGo").onclick=()=>{const L=getLive();if(L){restoreLive(L);openStage()}};
+$("#rSave").onclick=()=>{const L=getLive();if(L){restoreLive(L);openSave()}};
+$("#rDrop").onclick=()=>{if(confirm("Abandonner cette interview sans l'enregistrer ?")){clearLive();renderResume()}};
+
 $("#go").onclick=()=>{
-  build(); pos=0; guest=""; usedThemes=new Set(); usedTQ=new Set(); curLang=S.lang; $("#stage").classList.add("open"); show();
-  try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen()}catch(e){}
+  const L=getLive();
+  if(L && L.deck.some(d=>d.seen&&!SKIP.has(d.id)) && !confirm("Une interview n'a pas été enregistrée. La remplacer par une nouvelle ?")) return;
+  build(); pos=0; guest=""; usedThemes=new Set(); usedTQ=new Set(); curLang=S.lang; STARTED=Date.now(); openStage();
 };
-function closeStage(){$("#stage").classList.remove("open");try{document.fullscreenElement&&document.exitFullscreen()}catch(e){};setTimeout(updateBanner,400)}
-$("#close").onclick=()=>{ asked().length ? openSave() : closeStage() };
+function closeStage(){$("#stage").classList.remove("open");try{document.fullscreenElement&&document.exitFullscreen()}catch(e){};renderResume();setTimeout(updateBanner,400)}
+$("#close").onclick=()=>{ if(asked().length) openSave(); else {clearLive(); closeStage()} };
 $("#back").onclick=e=>{e.stopPropagation();prev()};
 $("#wrap").addEventListener("click",e=>{
   if(e.target.closest("input,.namebox,.finbtn"))return;
+  const cs=e.target.closest("[data-cs]"); if(cs){chooseConsent(cs.dataset.cs);return}
   const tl=e.target.closest("[data-opt]"); if(tl){chooseOpt(tl.dataset.opt);return}
   if(e.target.closest("#reroll")){const it=deck[pos]; it.theme=pickTheme(it.theme); show(); return}
   if(deck[pos].kind==="theme" && !deck[pos].chosen) return;
@@ -1001,17 +1073,19 @@ $("#dclose").onclick=()=>$("#drawer").classList.remove("open");
 function asked(){return deck.filter(d=>d.seen && !SKIP.has(d.id)).map(d=>Object.assign({id:d.id,t:txts(d),c:d.color??0},d.th?{th:d.th}:{}))}
 function openSave(){
   $("#sName").value=guest; $("#sNote").value="";
-  const a=asked();
+  const a=asked(), c=liveConsent();
+  $("#sConsent").textContent = consentTxt(c) + (c==="floute" ? " : visage à flouter au montage" : "");
   $("#sList").innerHTML = a.length ? a.map((q,i)=>`<li><span><b>${i+1}.</b> ${q.th?"🎭 ":""}${esc(q.t[2].replace(/\n/g," "))}</span></li>`).join("") : `<p class="empty">Aucune question posée.</p>`;
   $("#saveV").hidden=false;
 }
-$("#sResume").onclick=()=>{$("#saveV").hidden=true};
-$("#sDiscard").onclick=()=>{if(confirm("Supprimer cette interview sans l'enregistrer ?")){$("#saveV").hidden=true;closeStage();renderLib();go("setup")}};
+$("#sResume").onclick=()=>{$("#saveV").hidden=true; if(!$("#stage").classList.contains("open")) openStage()};
+$("#sDiscard").onclick=()=>{if(confirm("Supprimer cette interview sans l'enregistrer ?")){$("#saveV").hidden=true;clearLive();closeStage();renderLib();go("setup")}};
 $("#sSave").onclick=async()=>{
   const now=Date.now();
-  const s={id:"s"+now.toString(36)+Math.random().toString(36).slice(2,6),created:now,updated:now,lang:curLang,
-    name:$("#sName").value.trim(),note:$("#sNote").value.trim(),qs:asked()};
+  const s={id:"s"+now.toString(36)+Math.random().toString(36).slice(2,6),created:now,updated:now,started:STARTED||now,lang:curLang,
+    name:$("#sName").value.trim(),note:$("#sNote").value.trim(),consent:liveConsent(),qs:asked()};
   await storeSession(s);
+  clearLive();
   $("#saveV").hidden=true; closeStage(); toast("Interview enregistrée");
   openDetail(s.id);
 };
@@ -1019,7 +1093,7 @@ $("#sSave").onclick=async()=>{
 /* ---------- Historique ---------- */
 const fmtDate=t=>new Date(t).toLocaleString("fr-BE",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
 function renderHistory(){
-  $("#sessList").innerHTML = SESS.length ? SESS.map(s=>`<li><button data-s="${s.id}"><span><b>${esc(s.name||"Sans nom")}</b><small>${esc(s.note||"Pas de repère")} · ${fmtDate(s.created)}</small></span><span class="num">${s.qs.length} questions</span></button></li>`).join("")
+  $("#sessList").innerHTML = SESS.length ? SESS.map(s=>`<li><button data-s="${s.id}"><span><b>${esc(s.name||"Sans nom")}</b><small>${s.consent==="floute"?"😶‍🌫️ visage flouté · ":""}${esc(s.note||"Pas de repère")} · ${fmtDate(s.created)}</small></span><span class="num">${s.qs.length} questions</span></button></li>`).join("")
    : `<p class="empty">Pas encore d'interview enregistrée. Lance une interview : à la carte « Fin », tu pourras l'enregistrer ici.</p>`;
   const last=load("lastBackup",0), fresh=SESS.filter(s=>(s.updated||s.created)>last).length;
   let info = last ? `Dernière sauvegarde envoyée : ${fmtDate(last)}.` : "Aucune sauvegarde envoyée pour l'instant.";
@@ -1069,6 +1143,7 @@ function openDetail(id){
   $("#dTitle").textContent=CUR.name||"Sans nom";
   $("#dName").value=CUR.name||""; $("#dNote").value=CUR.note||"";
   $("#dMeta").textContent=`${fmtDate(CUR.created)} · cartes en ${({zh:"chinois",en:"anglais",fr:"français"})[CUR.lang]} · ${CUR.qs.length} questions`;
+  renderConsent();
   document.querySelectorAll("#xLang button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.x===S.xl));
   document.querySelectorAll("#xFmt button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===S.xf));
   $("#zipAll").hidden=!window.JSZip;
@@ -1082,6 +1157,12 @@ async function previews(){
     const c=drawSub(q,CUR.lang); img.src=c.toDataURL("image/png");
   }
 }
+function renderConsent(){
+  document.querySelectorAll("#xCons button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.c===(CUR.consent||"")));
+  $("#dWarn").hidden = CUR.consent!=="floute";
+}
+// corriger après coup (oubli, ou la personne demande le flou plus tard)
+$("#xCons").onclick=async e=>{const b=e.target.closest("button");if(!b)return;CUR.consent=b.dataset.c||null;renderConsent();await storeSession(CUR)};
 $("#detBack").onclick=()=>{renderHistory();go("history")};
 $("#dName").onchange=async()=>{CUR.name=$("#dName").value.trim();$("#dTitle").textContent=CUR.name||"Sans nom";await storeSession(CUR)};
 $("#dNote").onchange=async()=>{CUR.note=$("#dNote").value.trim();await storeSession(CUR)};
@@ -1089,7 +1170,7 @@ $("#xLang").onclick=e=>{const b=e.target.closest("button");if(b){S.xl=b.dataset.
 $("#xFmt").onclick=e=>{const b=e.target.closest("button");if(b){S.xf=b.dataset.f;persist();document.querySelectorAll("#xFmt button").forEach(x=>x.setAttribute("aria-pressed",x.dataset.f===S.xf))}};
 $("#delSess").onclick=async()=>{if(confirm("Supprimer définitivement cette interview ?")){await removeSession(CUR.id);renderHistory();go("history")}};
 $("#copyList").onclick=async()=>{
-  const lines=[`${CUR.name||"Sans nom"}${CUR.note?" — "+CUR.note:""} (${fmtDate(CUR.created)})`,""].concat(CUR.qs.map((q,i)=>`${i+1}. ${q.t[2].replace(/\n/g," ")}\n   ${q.t[LI[CUR.lang]].replace(/\n/g," ")}`));
+  const lines=[`${CUR.name||"Sans nom"}${CUR.note?" — "+CUR.note:""} (${fmtDate(CUR.created)})`,`Consentement : ${consentTxt(CUR.consent)}`,""].concat(CUR.qs.map((q,i)=>`${i+1}. ${q.t[2].replace(/\n/g," ")}\n   ${q.t[LI[CUR.lang]].replace(/\n/g," ")}`));
   try{await navigator.clipboard.writeText(lines.join("\n"));toast("Liste copiée")}catch(e){toast("Copie impossible sur cet appareil")}
 };
 $("#qsList").onclick=async e=>{
@@ -1110,7 +1191,7 @@ $("#zipAll").onclick=async()=>{
     zip.file(fileBase(i)+"_sous-titre.png", await new Promise(r=>drawSub(q,CUR.lang).toBlob(r,"image/png")));
     zip.file(fileBase(i)+"_plein-ecran-"+fmt+".png", await new Promise(r=>drawFull(q,CUR.lang,S.xf).toBlob(r,"image/png")));
   }
-  zip.file("questions.txt",CUR.qs.map((q,i)=>`${i+1}. ${q.t[2].replace(/\n/g," ")} | ${q.t[LI[CUR.lang]].replace(/\n/g," ")}`).join("\n"));
+  zip.file("questions.txt",`${CUR.name||"Sans nom"}${CUR.note?" — "+CUR.note:""} (${fmtDate(CUR.created)})\nConsentement : ${consentTxt(CUR.consent)}\n\n`+CUR.qs.map((q,i)=>`${i+1}. ${q.t[2].replace(/\n/g," ")} | ${q.t[LI[CUR.lang]].replace(/\n/g," ")}`).join("\n"));
   const blob=await zip.generateAsync({type:"blob"});
   offer(safe(CUR.name||"interview")+"_"+new Date(CUR.created).toISOString().slice(0,10)+".zip",blob,null);
 };
@@ -1256,6 +1337,13 @@ if(window.PWA){
 }
 
 renderLib();
+// Interview coupée (veille, app fermée, page rechargée) : moins de 30 min → on reprend direct sur la même carte,
+// sinon un encadré « Interview pas terminée » propose de reprendre, d'enregistrer ou d'abandonner.
+(()=>{
+  const L=getLive(); if(!L) return;
+  if(Date.now()-L.at < 30*60*1000){restoreLive(L); openStage(); toast("Interview reprise là où elle s'était arrêtée")}
+  else renderResume();
+})();
 </script>
 </body>
 </html>
