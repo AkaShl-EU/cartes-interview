@@ -1,6 +1,6 @@
 // Généré par outils/build.mjs — ne pas modifier à la main.
 // Garde toute l'app dans l'iPad pour qu'elle marche sans internet.
-const VERSION = "v2-f6d8a7d7a28f";
+const VERSION = "v3-f0d6afac36e4";
 const CACHE = "cartes-" + VERSION;
 const FICHIERS = [
  "./",

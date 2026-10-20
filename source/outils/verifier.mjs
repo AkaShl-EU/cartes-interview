@@ -12,8 +12,8 @@ export function verifier(html) {
   new vm.Script(js, { filename: "cartes-interview.js" }); // erreur de syntaxe → exception
 
   const cut = js.indexOf("const LI =");
-  const { CATS, Q, FIXED, THEMES, THEME_PROMPT, CONSENT_OPTS } =
-    new Function(js.slice(0, cut) + ";return {CATS,Q,FIXED,THEMES,THEME_PROMPT,CONSENT_OPTS}")();
+  const { CATS, Q, FIXED, THEMES, THEME_PROMPT, CONSENT_OPTS, BRANCH_OPTS } =
+    new Function(js.slice(0, cut) + ";return {CATS,Q,FIXED,THEMES,THEME_PROMPT,CONSENT_OPTS,BRANCH_OPTS}")();
   const NL = 3; // zh, en, fr
   const pb = [];
   const ok = (t) => Array.isArray(t) && t.length === NL && t.every(s => typeof s === "string" && s.trim());
@@ -27,6 +27,7 @@ export function verifier(html) {
   for (const [k, t] of Object.entries(FIXED)) if (!ok(t)) pb.push(`carte fixe incomplète : ${k}`);
   if (!ok(THEME_PROMPT)) pb.push("THEME_PROMPT incomplet");
   for (const o of CONSENT_OPTS) if (!ok(o.t)) pb.push(`bouton de consentement incomplet : ${o.id}`);
+  for (const o of BRANCH_OPTS) if (!ok(o.t)) pb.push(`bouton étudiant/travail incomplet : ${o.id}`);
   let tq = 0;
   for (const th of THEMES) {
     if (!ok(th.t)) pb.push(`titre de thème incomplet : ${th.id}`);
