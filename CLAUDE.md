@@ -6,6 +6,9 @@ la traduction se fait au montage.
 
 Réponds en français, de façon directe et concrète.
 
+Si le dépôt privé `AkaShl-EU/inerviews-rue-contexte` est aussi ouvert dans la session, lis d'abord son `CLAUDE.md` :
+il contient le contexte du projet (règles, prochaines étapes). Ne recopie jamais son contenu ici : ce dépôt-ci est public.
+
 ## Organisation du dépôt
 
 ```
