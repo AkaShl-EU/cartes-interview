@@ -173,7 +173,7 @@ h1 span{display:block;font-family:var(--han);font-size:.5em;font-weight:500;colo
 .branch{display:flex;gap:16px;margin-top:40px;flex-wrap:wrap;justify-content:center}
 .branch button,.finbtn{border:0;background:rgba(255,255,255,.92);color:#15171C;font-weight:800;font-size:1.1rem;padding:16px 26px;border-radius:16px}
 .branch button[data-br]{font-size:clamp(1.2rem,2.4vw,1.8rem);padding:18px 30px}
-.branch button[data-br] .han{font-family:var(--han);font-weight:900}
+.branch button[data-br] .han,.finbtn.han,.reroll.han{font-family:var(--han);font-weight:900}
 .branch button[data-br] small{display:block;font-size:clamp(.8rem,1.3vw,1rem);opacity:.7;font-weight:600;margin-top:4px}
 .namebox{margin-top:36px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;width:min(720px,100%)}
 .namebox input{flex:1;min-width:240px;font-family:var(--han);font-weight:500;font-size:clamp(1.6rem,3.6vw,2.6rem);padding:16px 22px;border-radius:20px;border:0;background:#fff;color:#15171C;text-align:center;user-select:text;-webkit-user-select:text}
@@ -487,6 +487,16 @@ const BRANCH_OPTS = [
  {id:"student",e:"🎓",t:["我是学生","I'm a student","Je suis étudiant"]},
  {id:"worker",e:"💼",t:["我在工作","I'm working","Je travaille"]}
 ];
+// Boutons et messages vus par la personne pendant l'interview (c'est elle qui touche).
+const UI = {
+ refusEnd:  ["结束","Finish","Terminer"],
+ finSave:   ["完成","Done","Terminé"],
+ reroll:    ["↻ 换一个主题","↻ Another theme","↻ Autre thème"],
+ needCons:  ["请选择 ✅、😶‍🌫️ 或 ❌","Please choose ✅, 😶‍🌫️ or ❌","Choisis ✅, 😶‍🌫️ ou ❌"],
+ needBranch:["请选择一个答案 👇","Please pick an answer 👇","Choisis une réponse 👇"],
+ needTheme: ["请选择一个主题 👇","Please pick a theme 👇","Choisis un thème 👇"]
+};
+const ui = k => UI[k][LI[curLang]];
 const THEME_PROMPT = ["下一个问题，\n由你来选主题！","You pick the theme\nof the next question!","C'est toi qui choisis le thème\nde la prochaine question !"];
 const THEMES = [
  {id:"screen",e:"🎬",t:["电影与屏幕","Movies & screens","Films et écrans"],opts:[
@@ -927,7 +937,7 @@ function showTheme(it){
   if(S.help&&L!=="fr") h+=`<p class="sub" style="margin-top:10px">${esc(THEME_PROMPT[2].replace(/\n/g," "))}</p>`;
   h+=`<p class="tname ${han?"han":""}">${th.e} ${esc(th.t[LI[L]])}</p><div class="tiles">`;
   th.opts.forEach((o,i)=>{const [b,f]=TPAL[i];h+=`<button class="tile ${it.chosen===o.id?"picked":""}" data-opt="${o.id}" style="--tb:${b};--tf:${f}"><span class="em">${o.e}</span><b class="${han?"han":""}">${esc(o.t[LI[L]])}</b>${S.help&&L!=="fr"?`<small>${esc(o.t[2])}</small>`:""}</button>`});
-  h+=`</div>${it.chosen?"":`<button class="reroll" id="reroll">↻ Autre thème</button>`}`;
+  h+=`</div>${it.chosen?"":`<button class="reroll ${han?"han":""}" id="reroll">${esc(ui("reroll"))}</button>`}`;
   $("#wrap").innerHTML=h;
   $("#count").textContent=`${pos+1} / ${deck.length}`;
   $("#prog").style.width=((pos+1)/deck.length*100)+"%";
@@ -953,10 +963,10 @@ function show(){
   h+=`<p class="big ${curLang==="zh"?"han":"lat"}">${esc(txt(it,curLang)).replace(/\n/g,"<br>")}</p>`;
   if(it.kind==="q" && byId[it.id][5]) h+=`<p class="note ${curLang==="zh"?"han":""}">${esc(byId[it.id][5][LI[curLang]]).replace(/\n/g,"<br>")}</p>`;
   if(it.id==="consent") h+=`<div class="yesno">${CONSENT_OPTS.map(o=>`<button data-cs="${o.id}" class="${it.consent===o.id?"on":""}"><span class="em">${o.e}</span><b class="${curLang==="zh"?"han":""}">${esc(o.t[LI[curLang]])}</b>${S.help&&curLang!=="fr"?`<small>${esc(o.t[2])}</small>`:""}</button>`).join("")}</div>`;
-  if(it.id==="refus") h+=`<div class="branch"><button class="finbtn" id="refusEnd">Terminer</button></div>`;
+  if(it.id==="refus") h+=`<div class="branch"><button class="finbtn ${curLang==="zh"?"han":""}" id="refusEnd">${esc(ui("refusEnd"))}</button></div>`;
   if(it.id==="nameIn") h+=`<div class="namebox"><input id="gName" lang="${LANGTAG[curLang]}" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" value="${esc(guest)}"><button id="gOk">OK</button></div>`;
   if(it.id==="status") h+=`<div class="branch">${BRANCH_OPTS.map(o=>`<button data-br="${o.id}">${o.e} <span class="${curLang==="zh"?"han":""}">${esc(o.t[LI[curLang]])}</span>${S.help&&curLang!=="fr"?`<small>${esc(o.t[2])}</small>`:""}</button>`).join("")}</div>`;
-  if(it.id==="fin") h+=`<div class="branch"><button class="finbtn" id="finSave">Enregistrer l'interview</button></div>`;
+  if(it.id==="fin") h+=`<div class="branch"><button class="finbtn ${curLang==="zh"?"han":""}" id="finSave">${esc(ui("finSave"))}</button></div>`;
   if(S.help && curLang!=="fr" && it.id!=="fin") h+=`<p class="sub">${esc(txt(it,"fr")).replace(/\n/g," ")}</p>`;
   $("#wrap").innerHTML=h;
   $("#count").textContent=`${pos+1} / ${deck.length}`;
@@ -974,11 +984,11 @@ function show(){
 }
 function next(){
   const it=deck[pos];
-  if(it.id==="consent" && !it.consent){toast("La personne choisit ✅, 😶‍🌫️ ou ❌");return}
+  if(it.id==="consent" && !it.consent){toast(ui("needCons"));return}
   if(it.id==="refus"){endRefus();return}
-  if(it.id==="status" && !(deck[pos+1] && (deck[pos+1].id==="student"||deck[pos+1].id==="worker"))){toast("Choisis Étudiant ou Travaille");return}
+  if(it.id==="status" && !(deck[pos+1] && (deck[pos+1].id==="student"||deck[pos+1].id==="worker"))){toast(ui("needBranch"));return}
   if(it.id==="fin"){openSave();return}
-  if(it.kind==="theme" && !(deck[pos+1]&&deck[pos+1].kind==="tq"&&it.chosen)){toast("La personne choisit un sous-thème");return}
+  if(it.kind==="theme" && !(deck[pos+1]&&deck[pos+1].kind==="tq"&&it.chosen)){toast(ui("needTheme"));return}
   if(pos<deck.length-1){pos++;show()}
 }
 function prev(){if(pos>0){pos--;show()}}
