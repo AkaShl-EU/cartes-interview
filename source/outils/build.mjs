@@ -2,6 +2,7 @@
 // La version générée est écrite à la RACINE du dépôt (publiée telle quelle par GitHub Pages).
 // Usage : cd source/outils && npm install && node build.mjs
 // - polices réduites aux caractères utilisés dans l'app (à relancer après chaque modification des textes)
+//   à partir de la réserve chinoise sources/noto-sc-*-reserve.woff2 (voir reservoir.mjs)
 // - JSZip en local, manifeste, icônes, service worker
 // - numéro de version incrémenté seulement si quelque chose a changé
 import fs from "node:fs";
@@ -9,7 +10,6 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import subsetFont from "subset-font";
-import { Resvg } from "@resvg/resvg-js";
 import { verifier } from "./verifier.mjs";
 
 const ICI = path.dirname(fileURLToPath(import.meta.url));
@@ -37,14 +37,19 @@ for (const ch of tous) if (!CJK.test(ch) && ch.codePointAt(0) < 0x2000) latin +=
 // Chinois : tous les caractères de l'app (le latin et la ponctuation inclus, car les cartes .han les affichent avec Noto)
 const han = [...tous].filter(ch => ch.codePointAt(0) >= 0x20 && ch.codePointAt(0) < 0x1f000).join("") + latin;
 
-// NotoSansSC-VF.ttf (17 Mo) n'est pas dans git : voir CLAUDE.md pour le récupérer.
-if (!fs.existsSync(path.join(SOURCES, "NotoSansSC-VF.ttf")))
-  throw new Error("Police manquante : source/outils/sources/NotoSansSC-VF.ttf (17 Mo, pas dans git). Voir CLAUDE.md, « Première installation ».");
-const noto = fs.readFileSync(path.join(SOURCES, "NotoSansSC-VF.ttf"));
+// Chinois : on part de la « réserve » rangée dans git (6 763 caractères courants + ceux de l'app, graisses 500 et 900),
+// pas de la police complète de 17 Mo. Ainsi le build marche partout (PC, Claude Code dans le cloud) et donne le même résultat.
+const reserve = new Set(fs.readFileSync(path.join(SOURCES, "noto-sc-reserve.txt"), "utf8"));
+const absents = [...new Set(han)].filter(c => c.codePointAt(0) >= 0x20 && !reserve.has(c)); // retours à la ligne, tabulations : pas de dessin
+if (absents.length) throw new Error(`Caractère(s) absent(s) de la réserve de police chinoise : ${absents.join(" ")}
+  → sur le PC qui a source/outils/sources/NotoSansSC-VF.ttf : node reservoir.mjs, puis node build.mjs (voir CLAUDE.md).
+  → sinon : remplacer ce caractère par un autre plus courant.`);
+const noto500 = fs.readFileSync(path.join(SOURCES, "noto-sc-500-reserve.woff2"));
+const noto900 = fs.readFileSync(path.join(SOURCES, "noto-sc-900-reserve.woff2"));
 const bric = fs.readFileSync(path.join(SOURCES, "BricolageGrotesque-VF.ttf"));
 const polices = [
-  { fichier: "noto-sc-500.woff2", famille: "Noto Sans SC", poids: 500, src: noto, texte: han, axes: { wght: 500 } },
-  { fichier: "noto-sc-900.woff2", famille: "Noto Sans SC", poids: 900, src: noto, texte: han, axes: { wght: 900 } },
+  { fichier: "noto-sc-500.woff2", famille: "Noto Sans SC", poids: 500, src: noto500, texte: han },
+  { fichier: "noto-sc-900.woff2", famille: "Noto Sans SC", poids: 900, src: noto900, texte: han },
   // Bricolage : on garde l'axe opsz (taille optique) comme Google Fonts, on fige la graisse
   { fichier: "bricolage-400.woff2", famille: "Bricolage Grotesque", poids: 400, src: bric, texte: latin, axes: { wght: 400, wdth: 100 } },
   { fichier: "bricolage-600.woff2", famille: "Bricolage Grotesque", poids: 600, src: bric, texte: latin, axes: { wght: 600, wdth: 100 } },
@@ -58,7 +63,7 @@ fs.mkdirSync(path.join(SITE, "icones"), { recursive: true });
 
 let css = "/* Polices sous licence SIL Open Font License (voir OFL-*.txt) */\n";
 for (const p of polices) {
-  const out = await subsetFont(p.src, p.texte, { targetFormat: "woff2", variationAxes: p.axes });
+  const out = await subsetFont(p.src, p.texte, p.axes ? { targetFormat: "woff2", variationAxes: p.axes } : { targetFormat: "woff2" });
   fs.writeFileSync(path.join(SITE, "polices", p.fichier), out);
   css += `@font-face{font-family:"${p.famille}";font-style:normal;font-weight:${p.poids};font-display:block;src:url(${p.fichier}) format("woff2")}\n`;
   console.log(`  ${p.fichier.padEnd(22)} ${(out.length / 1024).toFixed(0).padStart(5)} Ko`);
@@ -69,26 +74,9 @@ fs.copyFileSync(path.join(SOURCES, "OFL-Bricolage.txt"), path.join(SITE, "police
 fs.copyFileSync(path.join(SOURCES, "jszip.min.js"), path.join(SITE, "jszip.min.js"));
 
 // ---------- 2. Icônes ----------
-const bricIcone = await subsetFont(bric, "?", { targetFormat: "truetype", variationAxes: { wght: 800, wdth: 100, opsz: 96 } });
-const iconeSvg = (marge, taille) => {
-  // marge > 0 : version « maskable » (Android) avec zone de sécurité
-  const s = 1 - marge * 2, t = (v) => (512 * marge + v * s).toFixed(1);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${taille}" height="${taille}" viewBox="0 0 512 512">
-  <rect width="512" height="512" fill="#2340D9"/>
-  <g transform="translate(${t(0)} ${t(0)}) scale(${s})">
-    <rect x="118" y="108" width="276" height="316" rx="40" fill="#FFC93C" transform="rotate(-9 256 266)"/>
-    <rect x="118" y="100" width="276" height="316" rx="40" fill="#FFFFFF" transform="rotate(6 256 258)"/>
-    <text x="256" y="350" text-anchor="middle" font-family="Bricolage Grotesque" font-weight="800" font-size="250" fill="#2340D9" transform="rotate(6 256 258)">?</text>
-  </g>
-</svg>`;
-};
-const rendu = (svg) => new Resvg(svg, {
-  font: { loadSystemFonts: false, fontBuffers: [bricIcone], defaultFontFamily: "Bricolage Grotesque" },
-}).render().asPng();
-const icones = [
-  ["icone-192.png", 192, 0], ["icone-512.png", 512, 0], ["apple-touch-icon.png", 180, 0], ["icone-512-maskable.png", 512, 0.1],
-];
-for (const [nom, taille, marge] of icones) fs.writeFileSync(path.join(SITE, "icones", nom), rendu(iconeSvg(marge, taille)));
+// Dessinées une fois par icones.mjs et rangées dans git : on les copie telles quelles.
+for (const nom of fs.readdirSync(path.join(SOURCES, "icones")))
+  fs.copyFileSync(path.join(SOURCES, "icones", nom), path.join(SITE, "icones", nom));
 
 // ---------- 3. Manifeste ----------
 fs.writeFileSync(path.join(SITE, "manifest.webmanifest"), JSON.stringify({
