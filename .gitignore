@@ -1,0 +1,30 @@
+# Dépendances (réinstaller avec npm install dans source/outils)
+node_modules/
+
+# Police chinoise source : 17 Mo, trop lourde pour git (voir CLAUDE.md, « Première installation »)
+source/outils/sources/NotoSansSC-VF.ttf
+
+# Secrets
+.env
+.env.*
+
+# Vidéos, rushs, audio et archives : jamais dans le dépôt
+*.mp4
+*.mov
+*.m4v
+*.avi
+*.mkv
+*.webm
+*.mp3
+*.wav
+*.m4a
+*.zip
+
+# Sauvegardes d'interviews exportées depuis l'app (données personnelles)
+cartes-interview-sauvegarde*.json
+*-sauvegarde-*.json
+
+# Système
+.DS_Store
+Thumbs.db
+desktop.ini

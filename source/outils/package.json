@@ -1,0 +1,12 @@
+{
+  "name": "cartes-interview-outils",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "subset-font": "^2.9.0"
+  }
+}
