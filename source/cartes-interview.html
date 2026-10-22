@@ -133,7 +133,8 @@ h1 span{display:block;font-family:var(--han);font-size:.5em;font-weight:500;colo
 .stage{position:fixed;inset:0;display:none;z-index:20;background:var(--card);color:var(--cardink);transition:background .25s}
 .stage.open{display:block}
 .stage .wrap{position:absolute;inset:0;padding:calc(env(safe-area-inset-top,0px) + 70px) 6vw calc(env(safe-area-inset-bottom,0px) + 90px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;user-select:none;-webkit-user-select:none}
-.big{font-weight:900;line-height:1.25;max-width:22ch;margin:0;letter-spacing:.01em}
+.big{font-weight:900;line-height:1.25;max-width:22ch;margin:0;letter-spacing:.01em;text-wrap:balance}
+.big.fit{max-width:none;width:100%}
 .big.han{font-family:var(--han);font-size:clamp(2.4rem,7vw,6.2rem)}
 .big.lat{font-family:var(--latin);font-weight:800;font-size:clamp(2rem,5.2vw,4.6rem);letter-spacing:-.02em;max-width:24ch}
 .sub{margin-top:28px;font-size:clamp(1rem,1.8vw,1.35rem);opacity:.72;max-width:50ch;font-weight:600}
@@ -165,6 +166,10 @@ h1 span{display:block;font-family:var(--han);font-size:.5em;font-weight:500;colo
 .yesno b{font-weight:900;font-size:clamp(1.2rem,2.4vw,2rem);line-height:1.2}
 .yesno b.han{font-family:var(--han)}
 .yesno small{font-size:clamp(.8rem,1.3vw,1rem);opacity:.8;font-weight:600}
+/* téléphone : boutons de consentement en ligne (emoji + texte), pour laisser la place à la question */
+@media (max-width:700px){.yesno{gap:10px;margin-top:22px}
+  .yesno button{min-height:0;padding:10px 18px;display:grid;grid-template-columns:auto 1fr;column-gap:14px;row-gap:2px;align-items:center;justify-items:start;text-align:left}
+  .yesno .em{grid-row:span 2}}
 .resume{border:2px solid var(--cobalt);margin-bottom:20px}
 .resume p{margin:0 0 12px;line-height:1.4}
 .warn{border:2px solid var(--red);color:var(--red);border-radius:12px;padding:10px 14px;font-weight:700;margin:12px 0 0}
@@ -978,8 +983,23 @@ function show(){
   }
   if(it.id==="fin") $("#finSave").onclick=e=>{e.stopPropagation();openSave()};
   if(it.id==="refus") $("#refusEnd").onclick=e=>{e.stopPropagation();endRefus()};
+  fitBig();
   saveLive();
 }
+/* Texte de la carte aussi gros que possible, sur téléphone comme sur iPad : la personne lit à bout de bras.
+   On cherche la plus grande taille qui tient dans la place laissée par les boutons, la note, etc. */
+function fitBig(){
+  const w=$("#wrap"), b=w&&w.querySelector(".big"); if(!b||!$("#stage").classList.contains("open")) return;
+  b.classList.add("fit");
+  const cs=getComputedStyle(w), W=w.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+  const others=[...w.children].filter(e=>e!==b).reduce((a,e)=>{const s=getComputedStyle(e);return a+e.offsetHeight+parseFloat(s.marginTop)+parseFloat(s.marginBottom)},0);
+  const H=(w.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-others)*.94;
+  let lo=24, hi=Math.max(lo,Math.min(Math.min(innerWidth,innerHeight)*.2,140));  // téléphone ~75 px, iPad 140 px au plus
+  for(let i=0;i<14;i++){const m=(lo+hi)/2; b.style.fontSize=m+"px"; if(b.scrollWidth<=W+1 && b.offsetHeight<=H) lo=m; else hi=m}
+  b.style.fontSize=Math.floor(lo)+"px";
+}
+addEventListener("resize",()=>requestAnimationFrame(fitBig));
+if(document.fonts) document.fonts.ready.then(fitBig);
 function next(){
   const it=deck[pos];
   if(it.id==="consent" && !it.consent){toast(ui("needCons"));return}
